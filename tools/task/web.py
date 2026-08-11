@@ -23,6 +23,7 @@
 
 from __future__ import annotations
 
+import errno
 import hmac
 import json
 import os
@@ -510,7 +511,23 @@ def create_server(store_file: str, host: str = "127.0.0.1", port: int = 8787,
         )
 
     cfg = Config(store_file, token=token, read_only=read_only)
-    server = ThreadingHTTPServer((host, port), make_handler(cfg))
+    try:
+        server = ThreadingHTTPServer((host, port), make_handler(cfg))
+    except PermissionError as exc:
+        raise core.TaskError(
+            f"{port} порт руу холбогдох эрх алга. 1024-ээс доош портыг зөвхөн "
+            "root ашиглаж чадна — 8088, 8787 гэх мэт 1024-өөс дээш портыг "
+            "сонгоно уу."
+        ) from exc
+    except OSError as exc:
+        if exc.errno == errno.EADDRINUSE:
+            raise core.TaskError(
+                f"{port} порт аль хэдийн ашиглагдаж байна. Өөр порт сонгох "
+                f"эсвэл ажиллаж буй үйлчилгээг зогсооно уу "
+                f"(macOS: lsof -nP -iTCP:{port} -sTCP:LISTEN)."
+            ) from exc
+        raise core.TaskError(f"{host}:{port} дээр сервер асааж чадсангүй: {exc}") from exc
+
     server.daemon_threads = True
     server.config = cfg
 

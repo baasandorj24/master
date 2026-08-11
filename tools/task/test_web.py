@@ -380,3 +380,26 @@ class TestApi(WebTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestBindErrors(unittest.TestCase):
+    """Порт эзэлсэн / эрхгүй үед ойлгомжтой алдаа өгөх ёстой."""
+
+    def test_busy_port_reports_clear_error(self):
+        import socket
+        holder = socket.socket()
+        holder.bind(("127.0.0.1", 0))
+        holder.listen(1)
+        port = holder.getsockname()[1]
+        self.addCleanup(holder.close)
+
+        with self.assertRaises(core.TaskError) as ctx:
+            web.create_server("/tmp/unused-tasks.json", port=port)
+        self.assertIn("ашиглагдаж байна", str(ctx.exception))
+
+    @unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0,
+                     "root эрхтэй үед privileged порт нээгддэг")
+    def test_privileged_port_reports_clear_error(self):
+        with self.assertRaises(core.TaskError) as ctx:
+            web.create_server("/tmp/unused-tasks.json", port=88)
+        self.assertIn("1024", str(ctx.exception))

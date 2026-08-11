@@ -37,6 +37,27 @@ if [ ! -f "$TASK_PY" ]; then
   exit 1
 fi
 
+# 1024-өөс доош порт нь privileged — LaunchAgent нь хэрэглэгчийн эрхээр
+# ажилладаг тул холбогдож чадахгүй, KeepAlive-тай хамт давталтад ордог.
+if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [ "$PORT" -lt 1 ] || [ "$PORT" -gt 65535 ]; then
+  echo "Алдаа: PORT нь 1–65535 хооронд байх ёстой (одоо: '$PORT')." >&2
+  exit 1
+fi
+if [ "$PORT" -lt 1024 ]; then
+  cat >&2 <<MSG
+Алдаа: $PORT нь privileged порт (1024-өөс доош).
+
+macOS дээр ийм портыг зөвхөн root эзэмшиж чадна. LaunchAgent нь таны нэрийн
+доор ажилладаг тул сервис асаж чадалгүй байнга дахин эхэлнэ.
+
+1024-өөс дээш порт сонгоно уу, жишээ нь:
+
+    PORT=8088 $0
+    PORT=8888 $0
+MSG
+  exit 1
+fi
+
 xml_escape() {
   printf '%s' "$1" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'
 }
@@ -141,13 +162,13 @@ do_status() {
 }
 
 case "${1:-install}" in
-  install)   do_install ;;
-  uninstall) do_uninstall ;;
-  status)    do_status ;;
-  logs)      tail -f "$LOG" "$ERR" ;;
-  print)     make_plist ;;
+  install|restart) do_install ;;   # restart = дахин суулгаад асаах
+  uninstall)       do_uninstall ;;
+  status)          do_status ;;
+  logs)            tail -f "$LOG" "$ERR" ;;
+  print)           make_plist ;;
   *)
-    echo "Хэрэглээ: $0 [install|uninstall|status|logs|print]" >&2
+    echo "Хэрэглээ: $0 [install|restart|uninstall|status|logs|print]" >&2
     exit 1
     ;;
 esac
