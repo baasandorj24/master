@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# task — task.py-г дуудах жижиг wrapper.
+# PATH-д нэмэх жишээ:
+#   ln -s "$PWD/tools/task/task" ~/.local/bin/task
+set -euo pipefail
+
+SELF="${BASH_SOURCE[0]}"
+while [ -L "$SELF" ]; do
+  LINK="$(readlink "$SELF")"
+  case "$LINK" in
+    /*) SELF="$LINK" ;;
+    *)  SELF="$(dirname "$SELF")/$LINK" ;;
+  esac
+done
+DIR="$(cd "$(dirname "$SELF")" && pwd)"
+
+PY="${PYTHON:-}"
+if [ -z "$PY" ]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PY=python3
+  elif command -v python >/dev/null 2>&1; then
+    PY=python
+  else
+    echo "Алдаа: python3 олдсонгүй." >&2
+    exit 1
+  fi
+fi
+
+exec "$PY" "$DIR/task.py" "$@"
