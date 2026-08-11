@@ -216,6 +216,58 @@ task web --idle-timeout 30   # 30 минут ажиллагаагүй бол а�
 > зориулагдаагүй — алсаас хандах шаардлагатай бол SSH port forwarding
 > (`ssh -L 8787:127.0.0.1:8787 хэрэглэгч@хост`) ашиглана уу.
 
+### Байнгын ажиллуулах (autostart)
+
+#### macOS — LaunchAgent
+
+```bash
+cd ~/master
+./tools/task/service/install-macos.sh
+```
+
+Энэ нь `~/Library/LaunchAgents/com.task.web.plist` үүсгэж, сервисийг шууд
+асаана. Компьютер асаж, та нэвтрэх бүрд өөрөө ажиллана; санамсаргүй
+унтарвал launchd 10 секундын дараа дахин асаана.
+
+```bash
+./tools/task/service/install-macos.sh status      # төлөв харах
+./tools/task/service/install-macos.sh logs        # лог хөтлөх
+./tools/task/service/install-macos.sh uninstall   # устгах
+./tools/task/service/install-macos.sh print       # plist-ийг зөвхөн хэвлэх
+
+PORT=9000 ./tools/task/service/install-macos.sh              # өөр порт
+TASK_FILE=~/Documents/tasks.json ./tools/task/service/install-macos.sh
+READ_ONLY=1 ./tools/task/service/install-macos.sh            # зөвхөн унших
+```
+
+Лог: `~/Library/Logs/task-web.log`, `~/Library/Logs/task-web.err.log`.
+
+Хөтөчийн хавчуургад `http://127.0.0.1:8787/` гэж хадгалбал хүссэн үедээ
+шууд нээнэ. Сервис нь loopback дээр л сонсдог хэвээр — autostart болсноор
+гаднаас хандах эрсдэл нэмэгдэхгүй.
+
+> `--idle-timeout`-ыг launchd-тэй хамт бүү ашигла: сервис унтармагц launchd
+> дахин асааж, тасралтгүй давтагдана.
+
+#### Linux — systemd (хэрэглэгчийн unit)
+
+```bash
+mkdir -p ~/.config/systemd/user
+sed "s|__REPO__|$HOME/master|" tools/task/service/task-web.service \
+    > ~/.config/systemd/user/task-web.service
+systemctl --user daemon-reload
+systemctl --user enable --now task-web
+journalctl --user -u task-web -f
+```
+
+#### Хамгийн энгийн (түр зуурын)
+
+```bash
+nohup task web >~/task-web.log 2>&1 &
+```
+
+Терминал хаагдахад үлдэнэ, гэхдээ компьютер унтарч асахад дахин ажиллахгүй.
+
 ### JSON API
 
 Бүх хариу JSON. Өөрчлөлт хийсний дараа шинэчилсэн бүтэн төлөвийг буцаана.

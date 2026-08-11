@@ -1,0 +1,38 @@
+# Linux (systemd) дээр task web-ийг байнгын ажиллуулах хэрэглэгчийн unit.
+#
+# Суулгах:
+#   mkdir -p ~/.config/systemd/user
+#   sed "s|__REPO__|$HOME/master|" tools/task/service/task-web.service \
+#       > ~/.config/systemd/user/task-web.service
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now task-web
+#
+# Нэвтрээгүй үед ч ажиллуулах бол:  sudo loginctl enable-linger $USER
+# Лог харах:                        journalctl --user -u task-web -f
+# Зогсоох:                          systemctl --user disable --now task-web
+
+[Unit]
+Description=Локал таск удирдлагын вэб интерфэйс
+After=default.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 __REPO__/tools/task/task.py web --port 8787
+Environment=TASK_FILE=%h/.tasks.json
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+Restart=always
+RestartSec=10
+
+# Зөвхөн loopback дээр ажиллах учир нэмэлт хатууруулалт хийж болно.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=default.target
