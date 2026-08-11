@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{CSRF}}">
+<meta name="read-only" content="{{READONLY}}">
+<meta name="referrer" content="no-referrer">
+<title>Таск удирдлага</title>
+<link rel="stylesheet" href="/app.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>✓</text></svg>">
+</head>
+<body>
+
+<header class="topbar">
+  <h1>Таск удирдлага <span class="local-badge" title="Зөвхөн энэ компьютерээс хандах боломжтой">локал</span></h1>
+  <div class="topbar-actions">
+    <input id="search" type="search" placeholder="Хайх…  ( / )" autocomplete="off" spellcheck="false">
+    <a id="export" href="/api/export?format=md" download>Экспорт</a>
+  </div>
+</header>
+
+<main>
+  <form id="new-task" autocomplete="off">
+    <input id="new-title" name="title" placeholder="Шинэ таск…  ( n )" maxlength="500" required>
+    <select id="new-priority" name="priority" title="Ач холбогдол">
+      <option value="low">бага</option>
+      <option value="med" selected>дунд</option>
+      <option value="high">өндөр</option>
+      <option value="urgent">яаралтай</option>
+    </select>
+    <input id="new-due" name="due" placeholder="хугацаа: маргааш, +3d" size="18">
+    <input id="new-tags" name="tags" placeholder="шошго, таслалаар" size="16">
+    <button type="submit">Нэмэх</button>
+  </form>
+
+  <nav id="views" class="views"></nav>
+  <div id="tagbar" class="tagbar"></div>
+
+  <ul id="tasks" class="tasks"></ul>
+  <p id="empty" class="empty" hidden>Тохирох таск алга.</p>
+
+  <footer id="summary" class="summary"></footer>
+</main>
+
+<dialog id="edit-dialog">
+  <form id="edit-form" method="dialog">
+    <h2>Таск засах <span id="edit-id" class="muted"></span></h2>
+    <label>Гарчиг
+      <input id="edit-title" maxlength="500" required>
+    </label>
+    <div class="row">
+      <label>Ач холбогдол
+        <select id="edit-priority">
+          <option value="low">бага</option>
+          <option value="med">дунд</option>
+          <option value="high">өндөр</option>
+          <option value="urgent">яаралтай</option>
+        </select>
+      </label>
+      <label>Төлөв
+        <select id="edit-status">
+          <option value="todo">хүлээгдэж буй</option>
+          <option value="doing">хийгдэж буй</option>
+          <option value="done">дууссан</option>
+          <option value="cancelled">цуцлагдсан</option>
+        </select>
+      </label>
+    </div>
+    <div class="row">
+      <label>Хугацаа
+        <input id="edit-due" placeholder="2026-08-20, маргааш, +3d">
+      </label>
+      <label>Шошго
+        <input id="edit-tags" placeholder="ажил, тайлан">
+      </label>
+    </div>
+    <label>Тэмдэглэл
+      <textarea id="edit-note" rows="3" maxlength="5000"></textarea>
+    </label>
+    <menu>
+      <button type="button" id="edit-cancel" class="ghost">Болих</button>
+      <button type="button" id="edit-save">Хадгалах</button>
+    </menu>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="/app.js"></script>
+</body>
+</html>

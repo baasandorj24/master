@@ -775,6 +775,15 @@ def cmd_path(args, store: dict) -> int:
     return 0
 
 
+def cmd_web(args, store: dict) -> int:
+    """Локал вэб интерфэйс. web.py-г зөвхөн хэрэгцээтэй үед импортолно."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import web
+
+    # Энэ модулийг дамжуулснаар web.py task.py-г давхар ачаалахгүй.
+    return web.run(args, core_module=sys.modules[__name__])
+
+
 # --------------------------------------------------------------------- CLI
 
 def add_filter_flags(parser: argparse.ArgumentParser) -> None:
@@ -892,6 +901,23 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_path = sub.add_parser("path", help="өгөгдлийн файлын замыг хэвлэх")
     p_path.set_defaults(func=cmd_path)
+
+    p_web = sub.add_parser(
+        "web",
+        help="локал вэб интерфэйс асаах (зөвхөн энэ компьютерээс хандана)",
+    )
+    p_web.add_argument("-P", "--port", type=int, default=8787, help="порт (8787)")
+    p_web.add_argument("--host", default="127.0.0.1",
+                       help="зөвхөн 127.0.0.1 эсвэл ::1 зөвшөөрөгдөнө")
+    p_web.add_argument("--auth", action="store_true",
+                       help="санамсаргүй token үүсгэж, түүнийг шаардах")
+    p_web.add_argument("--token", help="өөрийн token заах (--auth-тай адил)")
+    p_web.add_argument("--read-only", action="store_true",
+                       help="зөвхөн унших — өөрчлөх хүсэлтийг татгалзана")
+    p_web.add_argument("--open", action="store_true", help="хөтчийг автоматаар нээх")
+    p_web.add_argument("--idle-timeout", type=int, default=0, metavar="МИН",
+                       help="N минут ажиллагаагүй бол автоматаар унтрах")
+    p_web.set_defaults(func=cmd_web)
 
     return parser
 
