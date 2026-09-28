@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>System Center — ProActive Security</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05080f;
+  --bg2:#0a1020;
+  --panel:rgba(18,26,46,.72);
+  --panel-solid:#111a2e;
+  --line:rgba(120,150,210,.18);
+  --text:#e9eef8;
+  --muted:#9aa7c0;
+  --red:#e3122b;
+  --red2:#ff3b52;
+  --cyan:#22d3ee;
+  --green:#22c55e;
+  --amber:#f59e0b;
+  --glow-red:0 0 24px rgba(227,18,43,.55);
+  --glow-cyan:0 0 24px rgba(34,211,238,.45);
+  --radius:18px;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:Montserrat,system-ui,sans-serif;overflow:hidden}
+body{background:radial-gradient(1200px 700px at 80% -10%,rgba(227,18,43,.16),transparent 60%),radial-gradient(900px 600px at -10% 110%,rgba(34,211,238,.10),transparent 60%),var(--bg)}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+#net{position:fixed;inset:0;z-index:0;pointer-events:none}
+.scan{position:fixed;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px)}
+.scan::after{content:"";position:absolute;left:0;right:0;height:140px;background:linear-gradient(180deg,transparent,rgba(34,211,238,.06),transparent);animation:sweep 7s linear infinite}
+@keyframes sweep{from{top:-140px}to{top:100%}}
+
+/* ---------- deck ---------- */
+.deck{position:relative;z-index:2;height:100%;width:100%}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:clamp(56px,7vh,90px) clamp(16px,6vw,110px) clamp(70px,9vh,100px);opacity:0;visibility:hidden;transform:scale(1.03);transition:opacity .7s var(--ease),transform .9s var(--ease),visibility 0s linear .7s;overflow-y:auto;overflow-x:hidden}
+.slide.active{opacity:1;visibility:visible;transform:none;transition:opacity .7s var(--ease),transform .9s var(--ease),visibility 0s}
+.slide.prev{transform:scale(.97) translateX(-3%)}
+.inner{width:100%;max-width:1320px;margin:auto}
+
+/* reveal animations */
+.r{opacity:0;transition:opacity .8s var(--ease),transform .8s var(--ease),filter .8s var(--ease);transition-delay:calc(var(--d,0) * 1ms + 150ms)}
+.r.up{transform:translateY(34px)}
+.r.left{transform:translateX(-50px)}
+.r.right{transform:translateX(50px)}
+.r.zoom{transform:scale(.85)}
+.r.blur{filter:blur(12px);transform:translateY(10px)}
+.active .r{opacity:1;transform:none;filter:none}
+
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font:600 13px/1 "JetBrains Mono",monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);margin-bottom:18px}
+.eyebrow::before{content:"";width:28px;height:2px;background:var(--cyan);box-shadow:var(--glow-cyan)}
+h1,h2{font-weight:800;letter-spacing:-.01em;line-height:1.12}
+h2{font-size:clamp(26px,3.4vw,48px);margin-bottom:clamp(18px,3.2vh,36px)}
+h2 .hl,.hl{color:var(--red2);text-shadow:var(--glow-red)}
+p{line-height:1.6;color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:clamp(16px,2vw,26px);backdrop-filter:blur(10px);position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(227,18,43,.6),transparent 40%,transparent 60%,rgba(34,211,238,.5));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .4s}
+.card:hover::before{opacity:1}
+.card h3{font-size:clamp(16px,1.35vw,20px);font-weight:700;margin-bottom:8px;color:var(--text)}
+.card p{font-size:clamp(13px,1.05vw,15.5px)}
+.ico{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:rgba(227,18,43,.12);border:1px solid rgba(227,18,43,.35);color:var(--red2);margin-bottom:14px;flex:none}
+.ico svg{width:26px;height:26px}
+.ico.c{background:rgba(34,211,238,.1);border-color:rgba(34,211,238,.35);color:var(--cyan)}
+.grid{display:grid;gap:clamp(12px,1.6vw,22px)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g5{grid-template-columns:repeat(5,1fr)}
+.src{margin-top:18px;font-size:11.5px;color:#6b7894}
+
+/* ---------- chrome ---------- */
+.progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--red),var(--cyan));box-shadow:var(--glow-red);z-index:10;transition:width .6s var(--ease)}
+.topbar{position:fixed;top:0;left:0;right:0;z-index:9;display:flex;align-items:center;justify-content:space-between;padding:14px clamp(16px,3vw,36px);pointer-events:none}
+.topbar img{height:30px;pointer-events:auto;opacity:.95}
+.topbar .status{font:600 12px "JetBrains Mono",monospace;color:var(--green);display:flex;align-items:center;gap:8px;letter-spacing:.08em}
+.topbar .status i{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:blink 1.4s infinite}
+@keyframes blink{50%{opacity:.25}}
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:9;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px clamp(16px,3vw,36px)}
+.dots{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.dots button{width:9px;height:9px;border-radius:9px;border:0;background:rgba(255,255,255,.22);cursor:pointer;transition:all .35s var(--ease);padding:0}
+.dots button.on{width:30px;background:var(--red);box-shadow:var(--glow-red)}
+.btns{display:flex;gap:8px}
+.btn{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:rgba(18,26,46,.8);color:var(--text);cursor:pointer;display:grid;place-items:center;transition:all .25s}
+.btn:hover{border-color:var(--red);box-shadow:var(--glow-red);color:#fff}
+.btn svg{width:20px;height:20px}
+.counter{font:600 13px "JetBrains Mono",monospace;color:var(--muted);min-width:70px}
+.counter b{color:var(--text)}
+
+/* ---------- slide 1: hero ---------- */
+.hero{display:grid;grid-template-columns:1.25fr 1fr;align-items:center;gap:40px}
+.hero .logo{display:block;height:clamp(56px,8vh,86px);margin-bottom:26px;filter:drop-shadow(0 0 18px rgba(227,18,43,.5))}
+.hero h1{font-size:clamp(30px,4.6vw,68px);font-weight:900;line-height:1.05;min-height:3.2em}
+.hero h1 .cur{display:inline-block;width:.08em;height:.9em;background:var(--red2);margin-left:6px;vertical-align:-.08em;animation:blink .8s steps(1) infinite}
+.hero .sub{margin-top:22px;font:600 clamp(14px,1.5vw,20px) "JetBrains Mono",monospace;color:var(--cyan);letter-spacing:.06em}
+.hero .contact{margin-top:28px;display:flex;flex-wrap:wrap;gap:10px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:99px;border:1px solid var(--line);background:rgba(18,26,46,.7);font-size:14px;color:var(--text);text-decoration:none}
+.pill svg{width:16px;height:16px;color:var(--red2)}
+.shield{position:relative;width:min(420px,38vw);aspect-ratio:1;margin:auto}
+.shield .ring{position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(34,211,238,.35);animation:spin 30s linear infinite}
+.shield .ring.r2{inset:12%;border:1px solid rgba(227,18,43,.35);border-top-color:var(--red2);animation-duration:6s}
+.shield .ring.r3{inset:24%;border:2px solid transparent;border-left-color:var(--cyan);border-right-color:var(--cyan);animation-duration:4s;animation-direction:reverse}
+.shield .radar{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(227,18,43,.35),transparent 25%);animation:spin 4s linear infinite;mask:radial-gradient(circle,transparent 30%,#000 31%)}
+.shield svg.core{position:absolute;inset:32%;width:36%;height:36%;color:var(--red2);filter:drop-shadow(0 0 22px rgba(227,18,43,.8));animation:pulse 2.4s ease-in-out infinite}
+.shield .blip{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);animation:blip 3s infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{transform:scale(1.08)}}
+@keyframes blip{0%,100%{opacity:0;transform:scale(.4)}40%{opacity:1;transform:scale(1)}}
+
+/* ---------- slide 2: about ---------- */
+.about{display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(20px,3vw,44px);align-items:start}
+.about .lead{font-size:clamp(14px,1.2vw,17px);color:#c3cde0}
+.stat{padding:clamp(14px,1.6vw,22px)}
+.stat .num{font-size:clamp(32px,3.6vw,54px);font-weight:900;background:linear-gradient(135deg,#fff,var(--red2));-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1}
+.stat p{margin-top:8px;font-size:clamp(12px,.95vw,14px)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.chip{font-size:12px;padding:5px 11px;border-radius:99px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.25);color:#bfeaf3}
+
+/* ---------- slide 3: question ---------- */
+.q{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.q h2{font-size:clamp(28px,3.8vw,56px)}
+.warn{font-size:clamp(18px,2vw,28px);font-weight:800;color:var(--red2);margin-top:10px}
+.orbit{position:relative;width:min(460px,40vw);aspect-ratio:1;margin:auto}
+.orbit .center{position:absolute;inset:36%;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,rgba(227,18,43,.35),rgba(227,18,43,.05));border:1px solid rgba(227,18,43,.5);box-shadow:var(--glow-red)}
+.orbit .center svg{width:44%;color:#fff}
+.orbit .track{position:absolute;inset:0;animation:spin 40s linear infinite}
+.svc{position:absolute;left:50%;top:50%;width:90px;height:90px;margin:-45px;text-align:center;font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:counter 40s linear infinite}
+.svc .b{width:58px;height:58px;margin:0 auto 6px;border-radius:16px;display:grid;place-items:center;background:var(--panel-solid);border:1px solid var(--line);transition:all .5s}
+.svc .b svg{width:28px;height:28px;color:var(--cyan);transition:color .5s}
+.svc span{display:block;white-space:nowrap;text-shadow:0 1px 6px #000}
+.svc.hacked .b{border-color:var(--red);box-shadow:var(--glow-red);background:rgba(227,18,43,.18)}
+.svc.hacked .b svg{color:var(--red2)}
+@keyframes counter{to{transform:rotate(-360deg)}}
+.glitch{position:relative;display:inline-block}
+.active .glitch{animation:glitch 3s infinite 2s}
+@keyframes glitch{0%,92%,100%{transform:none;text-shadow:var(--glow-red)}93%{transform:translate(-2px,1px);text-shadow:2px 0 var(--cyan),-2px 0 var(--red)}95%{transform:translate(2px,-1px);text-shadow:-2px 0 var(--cyan),2px 0 var(--red)}97%{transform:translate(-1px,0)}}
+.ok{display:flex;align-items:center;gap:12px;margin-top:24px;padding:14px 18px;border-radius:14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);color:#bdf5cf;font-weight:600;font-size:clamp(14px,1.3vw,18px)}
+.ok svg{width:26px;height:26px;color:var(--green);flex:none}
+
+/* ---------- slide 4: threat stats ---------- */
+.big{text-align:left}
+.big .num{font-size:clamp(34px,4vw,62px);font-weight:900;line-height:1;color:#fff}
+.big .num.red{color:var(--red2);text-shadow:var(--glow-red)}
+.big .num.cy{color:var(--cyan);text-shadow:var(--glow-cyan)}
+.big p{margin-top:10px;font-size:clamp(12.5px,1vw,15px)}
+.bar{height:6px;border-radius:6px;background:rgba(255,255,255,.07);margin-top:16px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--red),var(--red2));transition:width 1.8s var(--ease) .5s}
+.active .bar i{width:var(--w)}
+.alert{margin-top:clamp(16px,2.6vh,28px);display:flex;align-items:center;gap:16px;padding:16px 22px;border-radius:16px;background:linear-gradient(90deg,rgba(227,18,43,.22),rgba(227,18,43,.04));border:1px solid rgba(227,18,43,.45)}
+.alert svg{width:34px;height:34px;color:var(--red2);flex:none;animation:pulse 1.2s infinite}
+.alert b{font-size:clamp(15px,1.5vw,21px)}
+.alert p{font-size:clamp(12.5px,1vw,15px);margin-top:3px}
+
+/* ---------- slide 5: 22 sec ---------- */
+.fast{display:grid;grid-template-columns:.85fr 1.4fr;gap:clamp(20px,3vw,44px);align-items:center}
+.timer{position:relative;width:min(320px,30vw);aspect-ratio:1;margin:auto}
+.timer svg{width:100%;height:100%;transform:rotate(-90deg)}
+.timer circle{fill:none;stroke-width:8}
+.timer .bgc{stroke:rgba(255,255,255,.07)}
+.timer .fg{stroke:var(--red2);stroke-linecap:round;filter:drop-shadow(0 0 8px var(--red))}
+.timer .val{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.timer .val b{font:800 clamp(44px,5.5vw,84px) "JetBrains Mono",monospace;line-height:1;display:block}
+.timer .val small{font-size:13px;color:var(--muted);letter-spacing:.14em}
+.fast .cap{text-align:center;margin-top:14px;font-weight:600;color:#c3cde0;font-size:clamp(13px,1.1vw,16px)}
+.newlist{display:grid;gap:10px}
+.newi{display:flex;gap:14px;align-items:center;padding:12px 16px}
+.newi .ico{margin:0;width:42px;height:42px}
+.newi h3{margin:0 0 2px}
+.tag{font:700 10px "JetBrains Mono",monospace;padding:3px 7px;border-radius:6px;background:var(--red);color:#fff;margin-left:8px;vertical-align:2px;letter-spacing:.08em}
+
+/* ---------- slide 6: why vulnerable ---------- */
+.vuln{display:grid;grid-template-columns:1.5fr 1fr;gap:clamp(16px,2.4vw,32px);align-items:stretch}
+.quote{display:flex;flex-direction:column;justify-content:center;background:linear-gradient(160deg,rgba(227,18,43,.2),rgba(18,26,46,.8))}
+.quote .qm{font:900 110px/0.6 Georgia,serif;color:var(--red2);opacity:.6}
+.quote blockquote{font-size:clamp(20px,2.2vw,32px);font-weight:800;line-height:1.3;margin:18px 0}
+.quote cite{font-style:normal;color:var(--muted);font-size:14px}
+.num-badge{font:700 12px "JetBrains Mono",monospace;color:var(--red2);margin-bottom:6px;display:block}
+
+/* ---------- slide 7: services tabs ---------- */
+.tabs{display:grid;grid-template-columns:minmax(260px,.9fr) 1.4fr;gap:clamp(16px,2.4vw,32px)}
+.tablist{display:grid;gap:10px;align-content:start}
+.tab{display:flex;align-items:center;gap:14px;text-align:left;padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:600 clamp(13.5px,1.15vw,16px) Montserrat,sans-serif;cursor:pointer;position:relative;overflow:hidden;transition:all .3s}
+.tab .n{font:700 20px "JetBrains Mono",monospace;color:var(--muted);transition:color .3s}
+.tab.on{border-color:rgba(227,18,43,.6);background:rgba(227,18,43,.12)}
+.tab.on .n{color:var(--red2)}
+.tab .t{position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--red2)}
+.tab.on .t{animation:fill 6s linear forwards}
+@keyframes fill{to{width:100%}}
+.pane{display:none}
+.pane.on{display:block;animation:paneIn .6s var(--ease)}
+@keyframes paneIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+.pane h3{font-size:clamp(20px,2vw,28px);margin-bottom:18px}
+.pane ul{list-style:none;display:grid;gap:12px}
+.pane li{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--line);color:#c9d3e6;font-size:clamp(13.5px,1.1vw,16px);line-height:1.5;opacity:0;animation:li .5s var(--ease) forwards}
+.pane li b{font:700 13px "JetBrains Mono",monospace;color:var(--cyan);flex:none;padding-top:2px}
+@keyframes li{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* ---------- slide 8: OWASP ---------- */
+.seg{display:inline-flex;padding:5px;border-radius:14px;background:var(--panel);border:1px solid var(--line);margin-bottom:18px}
+.seg button{border:0;background:transparent;color:var(--muted);font:700 14px Montserrat,sans-serif;padding:10px 20px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .3s}
+.seg button svg{width:18px;height:18px}
+.seg button.on{background:var(--red);color:#fff;box-shadow:var(--glow-red)}
+.owdesc{font-size:clamp(13px,1.05vw,15.5px);margin-bottom:16px;max-width:900px}
+.ow{display:grid;grid-template-columns:repeat(2,1fr);gap:9px 14px}
+.owi{display:flex;gap:12px;align-items:center;padding:10px 14px;border-radius:12px;background:rgba(18,26,46,.65);border:1px solid var(--line);font-size:clamp(12.5px,1vw,14.5px);color:#c9d3e6;line-height:1.4;opacity:0;animation:li .45s var(--ease) forwards;transition:border-color .3s,transform .3s}
+.owi:hover{border-color:var(--red);transform:translateX(4px)}
+.owi b{font:700 13px "JetBrains Mono",monospace;flex:none;width:44px;height:30px;border-radius:8px;display:grid;place-items:center;background:rgba(227,18,43,.15);color:var(--red2);border:1px solid rgba(227,18,43,.35)}
+
+/* ---------- slide 9: cycle ---------- */
+.cyc{display:grid;grid-template-columns:1fr 1.1fr;gap:clamp(20px,3vw,48px);align-items:center}
+.wheel{position:relative;width:min(470px,40vw);aspect-ratio:1;margin:auto}
+.wheel .hub{position:absolute;inset:32%;border-radius:50%;display:grid;place-items:center;text-align:center;background:radial-gradient(circle,rgba(34,211,238,.18),rgba(18,26,46,.9));border:1px solid rgba(34,211,238,.4);box-shadow:var(--glow-cyan);padding:10px}
+.wheel .hub b{font:800 clamp(22px,2.2vw,34px) "JetBrains Mono",monospace;color:var(--cyan);display:block}
+.wheel .hub small{font-size:11px;color:var(--muted);letter-spacing:.1em}
+.wheel svg.arc{position:absolute;inset:0;width:100%;height:100%;animation:spin 20s linear infinite}
+.node{position:absolute;width:86px;height:86px;margin:-43px;border-radius:50%;display:grid;place-items:center;background:var(--panel-solid);border:2px solid var(--line);transition:all .5s var(--ease);cursor:pointer}
+.node svg{width:32px;height:32px;color:var(--muted);transition:color .5s}
+.node i{position:absolute;top:-6px;right:-4px;width:26px;height:26px;border-radius:50%;background:var(--bg2);border:1px solid var(--line);font:700 12px/24px "JetBrains Mono",monospace;text-align:center;font-style:normal}
+.node.on{border-color:var(--red2);box-shadow:var(--glow-red),inset 0 0 20px rgba(227,18,43,.3);transform:scale(1.14)}
+.node.on svg{color:#fff}
+.node.on i{background:var(--red);border-color:var(--red)}
+.steps{display:grid;gap:10px}
+.step{padding:14px 18px;border-radius:14px;border:1px solid var(--line);background:rgba(18,26,46,.55);transition:all .5s var(--ease);cursor:pointer}
+.step h3{font-size:clamp(15px,1.3vw,19px);margin-bottom:0;display:flex;gap:10px;align-items:center}
+.step h3 span{font:700 13px "JetBrains Mono",monospace;color:var(--red2)}
+.step p{font-size:clamp(12.5px,1vw,14.5px);max-height:0;overflow:hidden;opacity:0;transition:all .5s var(--ease)}
+.step.on{border-color:rgba(227,18,43,.55);background:rgba(227,18,43,.1)}
+.step.on p{max-height:120px;opacity:1;margin-top:6px}
+.loopnote{margin-top:14px;display:flex;gap:10px;align-items:center;color:var(--cyan);font:600 13px "JetBrains Mono",monospace}
+.loopnote svg{width:18px;height:18px;animation:spin 3s linear infinite}
+
+/* ---------- slide 10: pricing ---------- */
+.toggle{display:inline-flex;align-items:center;gap:12px;margin-bottom:22px;font-weight:600;font-size:14px;color:var(--muted)}
+.sw{width:54px;height:30px;border-radius:30px;background:var(--panel-solid);border:1px solid var(--line);position:relative;cursor:pointer}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--red2);box-shadow:var(--glow-red);transition:transform .35s var(--ease)}
+.sw.on::after{transform:translateX(24px)}
+.toggle .on-l{color:var(--text)}
+.price{display:flex;flex-direction:column;transition:transform .45s var(--ease),box-shadow .45s}
+.price:hover{transform:translateY(-8px)}
+.price.feat{border-color:rgba(227,18,43,.6);box-shadow:0 20px 60px -20px rgba(227,18,43,.55)}
+.price .badge{position:absolute;top:16px;right:16px;font:700 10.5px "JetBrains Mono",monospace;letter-spacing:.1em;padding:5px 9px;border-radius:7px;background:var(--red);color:#fff}
+.price .name{font-size:clamp(18px,1.6vw,23px);font-weight:800}
+.price .amt{margin:12px 0 4px;display:flex;align-items:baseline;gap:8px}
+.price .amt b{font:800 clamp(36px,3.6vw,54px) Montserrat,sans-serif;line-height:1;transition:opacity .25s}
+.price .amt span{color:var(--muted);font-weight:600}
+.price .yr{font:500 12.5px "JetBrains Mono",monospace;color:var(--muted);min-height:18px}
+.price .plus{display:inline-block;margin:14px 0 4px;font:700 12px "JetBrains Mono",monospace;color:var(--cyan)}
+.price ul{list-style:none;display:grid;gap:8px;margin-top:10px}
+.price li{display:flex;gap:10px;font-size:clamp(12.5px,1vw,14.5px);color:#c9d3e6;line-height:1.35}
+.price li svg{width:17px;height:17px;flex:none;color:var(--green);margin-top:1px}
+.price hr{border:0;border-top:1px dashed var(--line);margin:14px 0 0}
+.lbl{font:700 11px "JetBrains Mono",monospace;letter-spacing:.14em;color:var(--muted);margin-top:14px;text-transform:uppercase}
+
+/* ---------- slide 11: value ---------- */
+.val ul{list-style:none;display:grid;gap:10px;margin-top:12px}
+.val li{display:flex;gap:10px;font-size:clamp(13px,1.05vw,15.5px);color:#d3dbea;line-height:1.45}
+.val li svg{width:20px;height:20px;flex:none;color:var(--green)}
+.val .name{font-size:clamp(17px,1.5vw,22px);font-weight:800}
+.val .name small{display:block;font:600 12px "JetBrains Mono",monospace;color:var(--red2);margin-top:4px}
+.compare{margin-top:clamp(16px,2.4vh,26px);display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.compare .card{display:flex;gap:16px;align-items:center}
+.tl{flex:1;display:flex;gap:4px;align-items:flex-end;height:40px}
+.tl i{flex:1;border-radius:3px;background:rgba(255,255,255,.08);height:30%}
+.tl.good i{background:var(--green);height:100%;opacity:.8;transform-origin:bottom;transform:scaleY(0);transition:transform .5s var(--ease)}
+.active .tl.good i{transform:scaleY(1)}
+.tl.bad i:first-child{background:var(--amber);height:100%}
+
+/* ---------- slide 12: trust ---------- */
+.trust .card{text-align:center;padding-top:30px}
+.trust .ico{margin:0 auto 16px;width:66px;height:66px;border-radius:20px}
+.trust .ico svg{width:34px;height:34px}
+.trust .card:hover .ico{animation:pulse 1s infinite}
+
+/* ---------- slide 13: contact ---------- */
+.cta{display:grid;grid-template-columns:1.3fr 1fr;gap:clamp(20px,4vw,60px);align-items:center}
+.cta h2{font-size:clamp(34px,5vw,74px);font-weight:900}
+.cta .lead{font-size:clamp(15px,1.5vw,21px);color:#c3cde0;max-width:640px}
+.clist{display:grid;gap:12px;margin-top:28px}
+.citem{display:flex;align-items:center;gap:16px;padding:14px 18px;border-radius:14px;background:var(--panel);border:1px solid var(--line);text-decoration:none;color:var(--text);font-size:clamp(15px,1.4vw,19px);font-weight:600;transition:all .3s;max-width:480px}
+.citem:hover{border-color:var(--red);transform:translateX(6px);box-shadow:var(--glow-red)}
+.citem .ico{margin:0;width:44px;height:44px}
+.qrbox{position:relative;width:min(300px,70vw);margin:auto;padding:18px;border-radius:22px;background:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.3),0 30px 80px -20px rgba(227,18,43,.6)}
+.qrbox img{display:block;width:100%;image-rendering:pixelated}
+.qrbox::after{content:"";position:absolute;left:18px;right:18px;top:18px;height:3px;background:var(--red2);box-shadow:0 0 16px 4px rgba(227,18,43,.7);animation:qr 2.6s ease-in-out infinite}
+@keyframes qr{0%,100%{top:18px}50%{top:calc(100% - 21px)}}
+.qrcap{text-align:center;margin-top:16px;font-weight:600;color:var(--muted)}
+.foot{margin-top:30px;font:500 12.5px "JetBrains Mono",monospace;color:#6b7894}
+
+/* ---------- responsive ---------- */
+@media (max-width:980px){
+  .hero,.about,.q,.fast,.vuln,.tabs,.cyc,.cta{grid-template-columns:1fr}
+  .g4,.g5{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:1fr}
+  .shield{width:min(300px,70vw)}
+  .orbit,.wheel{width:min(380px,84vw)}
+  .timer{width:min(240px,60vw)}
+  .ow{grid-template-columns:1fr}
+  .slide{justify-content:flex-start}
+  .inner{margin:0 auto}
+  .hero h1{min-height:0}
+}
+@media (max-width:560px){
+  .g2,.g4,.g5,.compare{grid-template-columns:1fr}
+  .about .g2.stats{grid-template-columns:1fr 1fr}
+  .node{width:64px;height:64px;margin:-32px}
+  .node svg{width:24px;height:24px}
+  .svc{width:70px;height:70px;margin:-35px}
+  .nav{background:linear-gradient(0deg,var(--bg) 55%,transparent)}
+  .svc .b{width:46px;height:46px}
+  .topbar .status span{display:none}
+  .counter{display:none}
+  .dots button{width:7px;height:7px}
+  .dots button.on{width:20px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+</style>
+</head>
+<body>
+<canvas id="net"></canvas>
+<div class="scan"></div>
+<div class="progress" id="progress"></div>
+
+<header class="topbar">
+  <img src="data:image/png;base64,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" alt="System Center">
+  <div class="status"><i></i><span>SECURE · MONITORING</span></div>
+</header>
+
+<!-- SVG icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/><circle cx="12" cy="15.5" r="1.5"/></symbol>
+    <symbol id="i-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 017.7-1.5"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 010 6.8M18 14.8c1.9.7 3 2.4 3.5 5.2"/></symbol>
+    <symbol id="i-user-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M19 8v6M16 11h6"/></symbol>
+    <symbol id="i-award" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="M8.5 14l-1.5 8 5-3 5 3-1.5-8"/></symbol>
+    <symbol id="i-handshake" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12l4-4 4 2 4-3 4 1 4 4"/><path d="M6 8v6l4 4 2-1 2 2 2-1 2-3M10 10l3 3"/></symbol>
+    <symbol id="i-briefcase" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2M3 13h18"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></symbol>
+    <symbol id="i-call" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 006 6L16 13l5 2v4a2 2 0 01-2 2A16 16 0 013 5a2 2 0 012-2"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4.5 4.5 0 01-.6-9A6 6 0 0118 8a4 4 0 01-1 10H7z"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+    <symbol id="i-cart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11.5l2-8H6.2"/></symbol>
+    <symbol id="i-card" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></symbol>
+    <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01"/></symbol>
+    <symbol id="i-api" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+    <symbol id="i-skull" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 00-8 8c0 3 1.5 5 3 6v3a1 1 0 001 1h8a1 1 0 001-1v-3c1.5-1 3-3 3-6a8 8 0 00-8-8z"/><circle cx="9" cy="11" r="1.6"/><circle cx="15" cy="11" r="1.6"/><path d="M10 20v-2M14 20v-2"/></symbol>
+    <symbol id="i-bug" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="13" rx="5"/><path d="M9 7a3 3 0 016 0M3 13h4M17 13h4M4 7l3 2M20 7l-3 2M4 20l3-2M20 20l-3-2M12 11v6"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></symbol>
+    <symbol id="i-device" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="15" height="11" rx="1.5"/><path d="M6 19h7M9.5 15v4"/><rect x="17" y="9" width="5" height="11" rx="1"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h12v11H2zM14 9h4l4 4v3h-8"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 5.1A10 10 0 0112 5c6 0 10 7 10 7a17 17 0 01-3.2 3.9M6.6 6.6C3.9 8.4 2 12 2 12s4 7 10 7a9.6 9.6 0 005.4-1.6"/><path d="M9.9 9.9a3 3 0 004.2 4.2"/></symbol>
+    <symbol id="i-patch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.8-3.8a6 6 0 01-7.9 7.9l-6.9 6.9a2.1 2.1 0 01-3-3l6.9-6.9a6 6 0 017.9-7.9z"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.7-1.7"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5M8 11h6M11 8v6"/></symbol>
+    <symbol id="i-sort" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13M3 12h9M3 18h5M17 10V20M14 17l3 3 3-3"/></symbol>
+    <symbol id="i-report" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M8 17v-3M12 17v-6M16 17v-4"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0012 2z"/></symbol>
+    <symbol id="i-badge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 1.8 3 .1.9 2.9 2.4 1.8-.9 2.9.9 2.9-2.4 1.8-.9 2.9-3 .1L12 22l-2.4-1.8-3-.1-.9-2.9-2.4-1.8.9-2.9-.9-2.9 2.4-1.8.9-2.9 3-.1z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" stroke-width="1.6"/><path d="M8 12.5l2.7 2.7L16 9.8"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 01-15.5 6.3L3 16M3 12a9 9 0 0115.5-6.3L21 8M21 3v5h-5M3 21v-5h5"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M2 8h20M9 13l-2 2 2 2M15 13l2 2-2 2"/></symbol>
+    <symbol id="i-clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 2h6v4H9zM9 12l2 2 4-4M9 18h6"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.1 7-12a7 7 0 00-14 0c0 5.9 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+  </defs>
+</svg>
+
+<main class="deck" id="deck">
+
+<!-- 1 HERO -->
+<section class="slide" data-title="Нүүр">
+  <div class="inner hero">
+    <div>
+      <img class="logo r left" style="--d:0" src="data:image/png;base64,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" alt="System Center">
+      <div class="eyebrow r up" style="--d:200">ProActive Cybersecurity Services</div>
+      <h1><span id="typed"></span><span class="cur"></span></h1>
+      <div class="sub r up" style="--d:1800">&gt; Continuous Offensive Security Testing_</div>
+      <div class="contact r up" style="--d:2100">
+        <a class="pill" href="mailto:info@systemcenter.io"><svg><use href="#i-mail"/></svg>info@systemcenter.io</a>
+        <a class="pill" href="https://systemcenter.io" target="_blank" rel="noopener"><svg><use href="#i-globe"/></svg>systemcenter.io</a>
+      </div>
+    </div>
+    <div class="shield r zoom" style="--d:300">
+      <div class="radar"></div>
+      <div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div>
+      <span class="blip" style="left:18%;top:30%;animation-delay:.2s"></span>
+      <span class="blip" style="left:74%;top:22%;animation-delay:1.1s"></span>
+      <span class="blip" style="left:80%;top:68%;animation-delay:2s"></span>
+      <span class="blip" style="left:26%;top:76%;animation-delay:1.6s"></span>
+      <svg class="core"><use href="#i-shield"/></svg>
+    </div>
+  </div>
+</section>
+
+<!-- 2 ABOUT -->
+<section class="slide" data-title="Бидний тухай">
+  <div class="inner about">
+    <div>
+      <div class="eyebrow r up">Бидний тухай</div>
+      <h2 class="r up" style="--d:100">СИСТЕМ <span class="hl">ЦЕНТР</span> ХХК</h2>
+      <p class="lead r up" style="--d:250">Бид 2016 оноос хойш мэргэжлийн мэдээллийн технологи, мэдээллийн аюулгүй байдлын чиглэлээр энтерпрэйс байгууллагуудад сургалт, аудит, консалтинг, forensic үйлчилгээ, нэвтрэлтийн шалгалт, эрсдэлийн үнэлгээ зэрэг мэргэжлийн үйлчилгээг олон улсын стандартын дагуу чанарын өндөр түвшинд үзүүлж байна.</p>
+      <p class="lead r up" style="--d:400;margin-top:12px">Өнөөдөр бид кибер аюулгүй байдал, мэдээллийн аюулгүй байдал дээр <b style="color:#fff">Монголын хамгийн итгэлт компани</b> болсон.</p>
+      <div class="grid g2" style="margin-top:22px">
+        <div class="card r up" style="--d:550">
+          <div class="ico c"><svg><use href="#i-handshake"/></svg></div>
+          <h3>Харилцагчийн итгэл</h3>
+          <div class="chips"><span class="chip">Банк</span><span class="chip">Санхүү</span><span class="chip">Уул уурхай</span><span class="chip">Худалдаа</span><span class="chip">Дэд бүтэц</span><span class="chip">Нисэх</span><span class="chip">Үйлдвэрлэл</span><span class="chip">Тээвэр</span><span class="chip">Эрүүл мэнд</span><span class="chip">Боловсрол</span><span class="chip">Медиа</span></div>
+        </div>
+        <div class="card r up" style="--d:700">
+          <div class="ico"><svg><use href="#i-lock"/></svg></div>
+          <h3>Ёс зүй ба нууцлал</h3>
+          <p>Бизнес болон хувь хүний нууц мэдээллийг NDA-гаар баталгаажуулан хамгаална.</p>
+        </div>
+      </div>
+    </div>
+    <div class="grid g2 stats">
+      <div class="card stat r zoom" style="--d:300"><div class="ico"><svg><use href="#i-award"/></svg></div><div class="num" data-count="10" data-suffix="+">0</div><p>жилийн салбарын нарийн мэргэжлийн туршлага</p></div>
+      <div class="card stat r zoom" style="--d:450"><div class="ico"><svg><use href="#i-briefcase"/></svg></div><div class="num" data-count="300" data-suffix="+">0</div><p>амжилттай гүйцэтгэсэн төсөл</p></div>
+      <div class="card stat r zoom" style="--d:600"><div class="ico"><svg><use href="#i-users"/></svg></div><div class="num" data-count="10" data-suffix="+">0</div><p>ажлын туршлагатай мэргэжлийн инженерүүдээс бүрдэх баг</p></div>
+      <div class="card stat r zoom" style="--d:750"><div class="ico"><svg><use href="#i-badge"/></svg></div><div class="num" data-count="50" data-suffix="+">0</div><p>багийн гишүүдийн олон улсын мэргэшсэн сертификат</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 QUESTION -->
+<section class="slide" data-title="Асуулт">
+  <div class="inner q">
+    <div>
+      <div class="eyebrow r up">Өөрөөсөө асуугаарай</div>
+      <h2 class="r up" style="--d:100">Танай байгууллагад ямар <span class="hl">дижитал үйлчилгээ</span> байдаг вэ?</h2>
+      <div class="warn r blur" style="--d:1600"><span class="glitch">Эдгээр бүх үйлчилгээ хакдуулах боломжтойг та мэдэх үү!</span></div>
+      <div class="ok r up" style="--d:2600"><svg><use href="#i-shield"/></svg>Халдлагаас өмнө хамгаалж, бизнесийн үнэ цэнийг хадгална.</div>
+    </div>
+    <div class="orbit r zoom" style="--d:200" id="orbit">
+      <div class="center"><svg><use href="#i-skull"/></svg></div>
+      <div class="track"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 THREAT STATS -->
+<section class="slide" data-title="Аюулын түвшин">
+  <div class="inner">
+    <div class="eyebrow r up">Threat landscape 2026</div>
+    <h2 class="r up" style="--d:100">Кибер аюулын түвшин <span class="hl">шинэ дээд амжилтад</span> хүрлээ</h2>
+    <div class="grid g4">
+      <div class="card big r up" style="--d:250"><div class="ico"><svg><use href="#i-card"/></svg></div><div class="num red" data-count="4.99" data-prefix="$" data-suffix="M" data-dec="2">$0</div><p>Data breach-ийн дэлхийн дундаж өртөг (өмнөх оноос +12%)</p><div class="bar"><i style="--w:88%"></i></div></div>
+      <div class="card big r up" style="--d:400"><div class="ico c"><svg><use href="#i-bug"/></svg></div><div class="num cy" data-count="48185" data-sep="1">0</div><p>2025 онд бүртгэгдсэн шинэ CVE эмзэг байдал — өдөрт ~130</p><div class="bar"><i style="--w:95%"></i></div></div>
+      <div class="card big r up" style="--d:550"><div class="ico"><svg><use href="#i-cpu"/></svg></div><div class="num red" data-count="56" data-suffix="%">0%</div><p>AI ашигласан халдлага 56% өссөн</p><div class="bar"><i style="--w:56%"></i></div></div>
+      <div class="card big r up" style="--d:700"><div class="ico c"><svg><use href="#i-unlock"/></svg></div><div class="num cy" data-count="89" data-suffix="%">0%</div><p>2026 оны халдлагын илрүүлэлт malware-гүй — хууль ёсны эрх ашигласан</p><div class="bar"><i style="--w:89%"></i></div></div>
+    </div>
+    <div class="alert r left" style="--d:1000">
+      <svg><use href="#i-alert"/></svg>
+      <div><b>Халдлага <span class="hl">266%</span> өсөж, халдлагын зардал $4.99 сая хүрсэн байна.</b>
+      <p>AI ашигласан халдлага таны бизнест маш том эрсдэл үүсгэж байна. Тиймээс тасралтгүй бизнесийг хамгаалах шийдэл хамгийн үр дүнтэй арга болж шалгарсан.</p></div>
+    </div>
+    <p class="src r up" style="--d:1200">Эх сурвалж: IBM Cost of a Data Breach Report 2026 · CVE Program (2025 CVE Data Review) · Mandiant M-Trends 2026 · CrowdStrike 2026 Global Threat Report</p>
+  </div>
+</section>
+
+<!-- 5 22 SEC -->
+<section class="slide" data-title="22 секунд">
+  <div class="inner">
+    <div class="eyebrow r up">Хурд</div>
+    <h2 class="r up" style="--d:100">Илрүүлэхээс өмнө <span class="hl">халдлагад өртдөг</span> болсон</h2>
+    <div class="fast">
+      <div class="r zoom" style="--d:200">
+        <div class="timer" id="timer">
+          <svg viewBox="0 0 200 200"><circle class="bgc" cx="100" cy="100" r="90"/><circle class="fg" cx="100" cy="100" r="90" stroke-dasharray="565.5" stroke-dashoffset="565.5"/></svg>
+          <div class="val"><div><b id="tsec">0</b><small>СЕКУНД</small></div></div>
+        </div>
+        <p class="cap">Хакерууд халдлагыг дунджаар <span class="hl">~22 секундэд</span> амжилттай хийж байна</p>
+      </div>
+      <div class="newlist">
+        <div class="card newi r right" style="--d:500"><div class="ico"><svg><use href="#i-bug"/></svg></div><div><h3>Шинэ эмзэг байдал<span class="tag">NEW</span></h3><p>Программ, сервер тогтмол шинэчлэгдэхэд шинэ сул тал үүсдэг</p></div></div>
+        <div class="card newi r right" style="--d:650"><div class="ico"><svg><use href="#i-user-plus"/></svg></div><div><h3>Шинэ хэрэглэгч<span class="tag">NEW</span></h3><p>Ажилтан солигдох бүрт хандах эрх, эрсдэл өөрчлөгддөг</p></div></div>
+        <div class="card newi r right" style="--d:800"><div class="ico"><svg><use href="#i-device"/></svg></div><div><h3>Шинэ төхөөрөмж<span class="tag">NEW</span></h3><p>Сүлжээнд нэмэгдэх төхөөрөмж бүр шинэ довтолгооны цэг</p></div></div>
+        <div class="card newi r right" style="--d:950"><div class="ico"><svg><use href="#i-truck"/></svg></div><div><h3>Шинэ нийлүүлэгч<span class="tag">NEW</span></h3><p>Гуравдагч этгээдийн систем холбогдох бүрт эрсдэл нэмэгддэг</p></div></div>
+        <div class="card newi r right" style="--d:1100"><div class="ico"><svg><use href="#i-cpu"/></svg></div><div><h3>Шинэ халдлагын арга<span class="tag">AI</span></h3><p>Халдагчид AI ашиглан шинэ аргаар байнга дайрдаг</p></div></div>
+      </div>
+    </div>
+    <p class="src r up" style="--d:1300">Эх сурвалж: CVE Program 2025 Data Review · Mandiant M-Trends 2026 · CrowdStrike 2026 Global Threat Report</p>
+  </div>
+</section>
+
+<!-- 6 WHY VULNERABLE -->
+<section class="slide" data-title="Яагаад эмзэг вэ">
+  <div class="inner">
+    <div class="eyebrow r up">Шалтгаан</div>
+    <h2 class="r up" style="--d:100">Байгууллагууд яагаад <span class="hl">эмзэг хэвээр</span> байдаг вэ?</h2>
+    <div class="vuln">
+      <div class="grid g2">
+        <div class="card r up" style="--d:250"><div class="ico"><svg><use href="#i-eye-off"/></svg></div><span class="num-badge">01 · Visibility Gap</span><h3>Хэт удаан илрүүлэлт</h3><p>Зарим халдагчид дотоод сүлжээнд олон сар нуугдаж байна.</p></div>
+        <div class="card r up" style="--d:400"><div class="ico"><svg><use href="#i-patch"/></svg></div><span class="num-badge">02 · Unpatched Vulnerabilities</span><h3>Patch хийгдээгүй эмзэг байдал</h3><p>Нийт халдлагын <b style="color:#fff">32%</b> нь эмзэг байдлыг ашиглан эхэлсэн.</p></div>
+        <div class="card r up" style="--d:550"><div class="ico"><svg><use href="#i-link"/></svg></div><span class="num-badge">03 · Third-Party Supplier Risk</span><h3>Нийлүүлэгчийн эрсдэл</h3><p>Нийлүүлэгч, SaaS интеграциар дамжин халдлага орж ирдэг. Trusted SaaS integration болон supply chain ашиглах нь нэмэгдсэн.</p></div>
+        <div class="card r up" style="--d:700"><div class="ico"><svg><use href="#i-cpu"/></svg></div><span class="num-badge">04 · AI-enabled Attacks</span><h3>AI ашигласан халдлага</h3><p>AI ашиглан phishing, reconnaissance, malware хөгжүүлэлт хурдассан.</p></div>
+      </div>
+      <div class="card quote r right" style="--d:900">
+        <div class="qm">“</div>
+        <blockquote>Халдлагад өртөх эсэх биш, <span class="hl">хэзээ өртөх вэ</span> гэдэг л асуудал.</blockquote>
+        <cite>— James Comey, FBI-ийн дарга асан</cite>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 SERVICES -->
+<section class="slide" data-title="Үйлчилгээ">
+  <div class="inner">
+    <div class="eyebrow r up">Манай шийдэл</div>
+    <h2 class="r up" style="--d:100">Манай үйлчилгээ яагаад <span class="hl">чухал</span> вэ?</h2>
+    <div class="tabs r up" style="--d:250" id="svcTabs">
+      <div class="tablist">
+        <button class="tab on" data-i="0"><span class="n">01</span>Сар бүр тасралтгүй эмзэг байдлын шалгалт<span class="t"></span></button>
+        <button class="tab" data-i="1"><span class="n">02</span>Compliance аудитын бэлэн байдлыг хангана<span class="t"></span></button>
+        <button class="tab" data-i="2"><span class="n">03</span>Хөгжүүлэлтийн алдааг эрт илрүүлнэ<span class="t"></span></button>
+        <button class="tab" data-i="3"><span class="n">04</span>Агентик нэвтрэлтийн шалгалт<span class="t"></span></button>
+      </div>
+      <div class="card">
+        <div class="pane on"><h3>Сар бүр тасралтгүй эмзэг байдлын шалгалт</h3><ul>
+          <li><b>1.1</b>Өөрчлөгдөж буй эрсдэлийг сар бүр илрүүлж бууруулна.</li>
+          <li><b>1.2</b>Эрсдэлийг тогтмол илрүүлж, бизнесийн нөлөөллөөс сэргийлнэ.</li>
+          <li><b>1.3</b>Шинэ эмзэг байдлыг эрт илрүүлж, эрсдэлийг бууруулна.</li>
+          <li><b>1.4</b>Тасралтгүй хяналтаар аюулгүй байдлын эрсдэлийг удирдана.</li></ul></div>
+        <div class="pane"><h3>Compliance аудитын бэлэн байдлыг хангана</h3><ul>
+          <li><b>2.1</b>Аудит, compliance шаардлагыг тасралтгүй хангахад дэмжлэг үзүүлнэ.</li>
+          <li><b>2.2</b>Зохицуулалтын шаардлагыг баталгаажуулж, эрсдэлийг бууруулна.</li>
+          <li><b>2.3</b>Compliance бэлэн байдлыг сайжруулж, аудитын эрсдэлийг бууруулна.</li>
+          <li><b>2.4</b>Аудитын амжилтыг дэмжих баталгаажсан нотолгоо бүрдүүлнэ.</li></ul></div>
+        <div class="pane"><h3>Хөгжүүлэлтийн алдааг эрт илрүүлнэ</h3><ul>
+          <li><b>3.1</b>Хөгжүүлэлтийн алдааг үйлдвэрлэлийн орчинд хүрэхээс өмнө илрүүлнэ.</li>
+          <li><b>3.2</b>Шинэ хувилбарын эрсдэлийг эрт илрүүлж бууруулна.</li>
+          <li><b>3.3</b>Хөгжүүлэлтийн эрсдэлийг бизнесийн тасалдал болохоос сэргийлнэ.</li>
+          <li><b>3.4</b>Шинэчлэлт бүрийн аюулгүй байдлыг тасралтгүй баталгаажуулна.</li></ul></div>
+        <div class="pane"><h3>Агентик нэвтрэлтийн шалгалт</h3><ul>
+          <li><b>4.1</b>AI ба экспертүүдээр бодит эрсдэлийг баталгаажуулна.</li>
+          <li><b>4.2</b>Бодит халдагчийн өнцгөөс хамгаалалтыг тасралтгүй шалгана.</li>
+          <li><b>4.3</b>Автоматжуулсан халдлагын симуляциар эрсдэлийг илрүүлнэ.</li>
+          <li><b>4.4</b>AI-driven Pentest-ээр эмзэг байдлыг түрүүлж илрүүлнэ.</li>
+          <li><b>4.5</b>Халдлагын боломжит замуудыг тасралтгүй баталгаажуулна.</li></ul></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 OWASP -->
+<section class="slide" data-title="OWASP">
+  <div class="inner">
+    <div class="eyebrow r up">OWASP Top 10</div>
+    <h2 class="r up" style="--d:100"><span class="hl">Mobile, Web</span> давхаргуудыг сар бүр шалгана</h2>
+    <div class="r up" style="--d:250">
+      <div class="seg" id="owSeg"><button class="on" data-k="m"><svg><use href="#i-phone"/></svg>Мобайл</button><button data-k="w"><svg><use href="#i-globe"/></svg>Веб</button></div>
+      <p class="owdesc" id="owDesc"></p>
+      <div class="ow" id="owList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 CYCLE -->
+<section class="slide" data-title="5 алхам">
+  <div class="inner">
+    <div class="eyebrow r up">Үйл явц</div>
+    <h2 class="r up" style="--d:100">Үр дүнтэй байлгах <span class="hl">5 алхамт</span> үйл явц сар бүр давтагдана</h2>
+    <div class="cyc">
+      <div class="wheel r zoom" style="--d:250" id="wheel">
+        <svg class="arc" viewBox="0 0 200 200"><circle cx="100" cy="100" r="80" fill="none" stroke="rgba(34,211,238,.25)" stroke-width="1" stroke-dasharray="3 6"/><circle cx="100" cy="100" r="80" fill="none" stroke="#ff3b52" stroke-width="2" stroke-dasharray="60 443" stroke-linecap="round"/></svg>
+        <div class="hub"><div><b>30</b><small>ХОНОГ ТУТАМ</small></div></div>
+      </div>
+      <div>
+        <div class="steps" id="steps">
+          <div class="step r right" style="--d:350"><h3><span>01</span>Илрүүлнэ</h3><p>World-class хакеруудын ашигладаг арга замуудаар эмзэг байдлыг шалгаж, байгууллагад хор хөнөөл учруулах бүх арга замуудыг шалгана.</p></div>
+          <div class="step r right" style="--d:450"><h3><span>02</span>Эрэмбэлнэ</h3><p>Илэрсэн эмзэг байдлуудыг байгууллагад учруулах хор хөнөөлөөр нь эрэмбэлж, кибер аюулгүй байдлыг хангах чухлын зэрэглэл үүсгэнэ.</p></div>
+          <div class="step r right" style="--d:550"><h3><span>03</span>Тайлагнана</h3><p>Олон улсын стандартын дагуу тайлан гаргана: ISO 27001:2022, PCI-DSS, NIST framework.</p></div>
+          <div class="step r right" style="--d:650"><h3><span>04</span>Зөвлөмж өгнө</h3><p>Кибер аюулгүй байдлын экспертийн мэргэжлийн зөвлөмжүүд өгнө.</p></div>
+          <div class="step r right" style="--d:750"><h3><span>05</span>Баталгаажуулна</h3><p>Засвар хийгдсэнийг тоон үзүүлэлтээр баталгаажуулна.</p></div>
+        </div>
+        <div class="loopnote r up" style="--d:900"><svg><use href="#i-refresh"/></svg>Энэ мөчлөг сар бүр автоматаар давтагдана</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 PRICING -->
+<section class="slide" data-title="Багцууд">
+  <div class="inner">
+    <div class="eyebrow r up">Үнийн санал</div>
+    <h2 class="r up" style="--d:100">Танд тохирох <span class="hl">багцаа</span> сонгоорой</h2>
+    <div class="toggle r up" style="--d:200"><span id="lblM" class="on-l">Сараар</span><div class="sw" id="sw" role="switch" aria-checked="false" tabindex="0"></div><span id="lblY">Жилээр</span></div>
+    <div class="grid g3">
+      <div class="card price r up" style="--d:300">
+        <div class="name">Старт багц</div>
+        <div class="amt"><b data-m="2" data-y="24">2</b><span class="per">сая ₮ / сар</span></div>
+        <div class="yr">Бүтэн жил: 12 × 2 сая = 24 сая</div>
+        <hr><div class="lbl">Хамрах хүрээ</div>
+        <ul>
+          <li><svg><use href="#i-check"/></svg>1 веб систем</li>
+          <li><svg><use href="#i-check"/></svg>Сар бүр автомат эмзэг байдлын шалгалт</li>
+          <li><svg><use href="#i-check"/></svg>Улирал тутам эксперт баталгаажуулалт</li>
+          <li><svg><use href="#i-check"/></svg>Менежментийн товч тайлан</li>
+          <li><svg><use href="#i-check"/></svg>Эрсдэлийн үнэлгээ</li>
+          <li><svg><use href="#i-check"/></svg>Мэргэжлийн зөвлөмж</li>
+        </ul>
+      </div>
+      <div class="card price feat r up" style="--d:450">
+        <span class="badge">САНАЛ БОЛГОХ</span>
+        <div class="name">Мэргэжлийн багц</div>
+        <div class="amt"><b data-m="5" data-y="60">5</b><span class="per">сая ₮ / сар</span></div>
+        <div class="yr">Бүтэн жил: 12 × 5 сая = 60 сая</div>
+        <hr><span class="plus">+ Старт багц</span>
+        <ul>
+          <li><svg><use href="#i-check"/></svg>3 хүртэлх веб болон мобайл систем</li>
+          <li><svg><use href="#i-check"/></svg>Attack Surface Discovery</li>
+          <li><svg><use href="#i-check"/></svg>Сар бүрийн Pentest</li>
+          <li><svg><use href="#i-check"/></svg>Давтан баталгаажуулалт (Retest)</li>
+          <li><svg><use href="#i-check"/></svg>Compliance Mapping</li>
+          <li><svg><use href="#i-check"/></svg>Онлайн Dashboard</li>
+          <li><svg><use href="#i-check"/></svg>Эрсдэлийн тренд хяналт</li>
+          <li><svg><use href="#i-check"/></svg>Сар бүрийн тайлан</li>
+        </ul>
+      </div>
+      <div class="card price r up" style="--d:600">
+        <div class="name">Enterprise багц</div>
+        <div class="amt"><b data-m="10" data-y="120">10</b><span class="per">сая ₮ / сар</span></div>
+        <div class="yr">Бүтэн жил: 12 × 10 сая = 120 сая</div>
+        <hr><span class="plus">+ Мэргэжлийн багц</span>
+        <ul>
+          <li><svg><use href="#i-check"/></svg>10 хүртэлх веб болон мобайл систем</li>
+          <li><svg><use href="#i-check"/></svg>CISO түвшний зөвлөх үйлчилгээ</li>
+          <li><svg><use href="#i-check"/></svg>Attack Path Analysis</li>
+          <li><svg><use href="#i-check"/></svg>Threat Exposure Validation</li>
+          <li><svg><use href="#i-check"/></svg>Pentest, Retest, Dashboard, тайлан</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 VALUE -->
+<section class="slide" data-title="Бизнес үнэ цэнэ">
+  <div class="inner">
+    <div class="eyebrow r up">Бизнес үнэ цэнэ</div>
+    <h2 class="r up" style="--d:100">Багц бүрийн <span class="hl">бизнест өгөх</span> үнэ цэнэ</h2>
+    <div class="grid g3 val">
+      <div class="card r up" style="--d:250"><div class="ico c"><svg><use href="#i-target"/></svg></div><div class="name">Старт<small>2 сая ₮ / сар</small></div><ul>
+        <li><svg><use href="#i-check"/></svg>Жилд нэг удаагийн pentest-ээс илүү тогтмол хяналт</li>
+        <li><svg><use href="#i-check"/></svg>Шинээр үүссэн эмзэг байдлыг эрт илрүүлнэ</li>
+        <li><svg><use href="#i-check"/></svg>Аудитын бэлэн байдлыг сайжруулна</li></ul></div>
+      <div class="card r up" style="--d:400"><div class="ico"><svg><use href="#i-clip"/></svg></div><div class="name">Мэргэжлийн<small>5 сая ₮ / сар</small></div><ul>
+        <li><svg><use href="#i-check"/></svg>OWASP Top 10 болон бизнесийн логикийн алдааг тасралтгүй илрүүлнэ</li>
+        <li><svg><use href="#i-check"/></svg>PCI DSS, ISO 27001, NIST шаардлагын нийцлийг дэмжинэ</li>
+        <li><svg><use href="#i-check"/></svg>Эрсдэлийн өөрчлөлтийг сар бүр хянана</li>
+        <li><svg><use href="#i-check"/></svg>Хөгжүүлэлтийн дараах шинэ эрсдэлийг илрүүлнэ</li></ul></div>
+      <div class="card r up" style="--d:550"><div class="ico c"><svg><use href="#i-server"/></svg></div><div class="name">Enterprise<small>10 сая ₮ / сар</small></div><ul>
+        <li><svg><use href="#i-check"/></svg>Халдагчийн өнцгөөс тасралтгүй үнэлгээ</li>
+        <li><svg><use href="#i-check"/></svg>Cloud, Web, Mobile орчныг хамарсан хамгаалалт</li>
+        <li><svg><use href="#i-check"/></svg>Бизнесийн өндөр эрсдэлийг эрэмбэлэн удирдана</li>
+        <li><svg><use href="#i-check"/></svg>Байгууллагын хэмжээнд Offensive Security хөтөлбөр хэрэгжүүлнэ</li></ul></div>
+    </div>
+    <div class="compare">
+      <div class="card r left" style="--d:750"><div style="min-width:150px"><h3 style="margin:0">Жилд 1 удаа pentest</h3><p>11 сар хяналтгүй</p></div><div class="tl bad"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="card r right" style="--d:850"><div style="min-width:150px"><h3 style="margin:0">ProActive — сар бүр</h3><p>12/12 сар хяналттай</p></div><div class="tl good"><i style="transition-delay:1.0s"></i><i style="transition-delay:1.08s"></i><i style="transition-delay:1.16s"></i><i style="transition-delay:1.24s"></i><i style="transition-delay:1.32s"></i><i style="transition-delay:1.4s"></i><i style="transition-delay:1.48s"></i><i style="transition-delay:1.56s"></i><i style="transition-delay:1.64s"></i><i style="transition-delay:1.72s"></i><i style="transition-delay:1.8s"></i><i style="transition-delay:1.88s"></i></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 TRUST -->
+<section class="slide" data-title="Итгэл">
+  <div class="inner">
+    <div class="eyebrow r up">Яагаад бид</div>
+    <h2 class="r up" style="--d:100">Яагаад бидэнд <span class="hl">итгэж</span> болох вэ?</h2>
+    <div class="grid g4 trust">
+      <div class="card r up" style="--d:250"><div class="ico"><svg><use href="#i-users"/></svg></div><h3>Мэргэжлийн баг</h3><p>Олон улсын сертификаттай, 10+ жилийн туршлагатай баг таны системийг шалгана.</p></div>
+      <div class="card r up" style="--d:400"><div class="ico c"><svg><use href="#i-award"/></svg></div><h3>Туршлага</h3><p>МАБ-ын чиглэлээр 250 гаруй төслийг олон улсын стандартын дагуу амжилттай хэрэгжүүлсэн.</p></div>
+      <div class="card r up" style="--d:550"><div class="ico"><svg><use href="#i-handshake"/></svg></div><h3>Харилцагчийн итгэл</h3><p>Банк, төрийн байгууллага болон бизнесийн салбарын олон харилцагчийн итгэлийг хүлээсэн, тогтвортой түнш.</p></div>
+      <div class="card r up" style="--d:700"><div class="ico c"><svg><use href="#i-lock"/></svg></div><h3>Ёс зүй, нууцлал</h3><p>Таны бизнесийн нууц мэдээллийг NDA-гаар баталгаажуулан хамгаална.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 CONTACT -->
+<section class="slide" data-title="Холбоо барих">
+  <div class="inner cta">
+    <div>
+      <div class="eyebrow r up">Дараагийн алхам</div>
+      <h2 class="r up" style="--d:100">Хамтдаа <span class="hl">ажиллацгаая</span></h2>
+      <p class="lead r up" style="--d:250">Танай Mobile, Web орчны тасралтгүй кибер аюулгүй байдлын үнэлгээг эхлүүлье.</p>
+      <div class="clist">
+        <a class="citem r left" style="--d:400" href="mailto:info@systemcenter.io"><span class="ico"><svg><use href="#i-mail"/></svg></span>info@systemcenter.io</a>
+        <a class="citem r left" style="--d:500" href="tel:75759997"><span class="ico"><svg><use href="#i-call"/></svg></span>7575-9997</a>
+        <a class="citem r left" style="--d:600" href="https://systemcenter.io" target="_blank" rel="noopener"><span class="ico c"><svg><use href="#i-globe"/></svg></span>systemcenter.io</a>
+      </div>
+      <div class="foot r up" style="--d:800">System Center LLC · Улаанбаатар, Монгол улс</div>
+    </div>
+    <div class="r zoom" style="--d:500">
+      <div class="qrbox"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAdYAAAHWAQAAAADiYZX3AAAEVElEQVR4nO2dTY7bMAyFHysDXdpADzBHcW7QIxW9mX2UOUABeTmADXZBUaKnjdNfo54+LoJM4g+pAIKkHilVFL9q27tfRgGyb5uFTvWd5qQYdbXPyhf9ai869ao69as/3q9XXC/Zc9jiL2relNRcSnNS1eyPaAYwqhavUzUPu+J6yZ7HbiIy+AdjBkSeVgC9mnPJrVfFLF15ZBaRP/G7ZP8XdhORJ1VgEZHb0gFwl7IUOA9/5XfJvjW2C+9H3TpgESiWD6vMAwRAWoH+i2DMW7dnr7hesuewsb5SVbUAFQt1VSu3JqTwHOsrsg/YRUREOmAeNtEJm/gecRN7mZ9eBOhfBPMAiIiI3C67XrInsCX6WAhCslCFMQNWt5uw0JdAtjPGK7IHbCnFN7Hsp9mdy4p3wNzMxAbbCi6MV2QfmFdLqgCSYsxJzZEmwHaBqjnKpOVP1ldkD0xVVwSVXU3+LGaPTC0PZvewkXmQ7IGFraBFqdap8fDVNoql1ZMZr8g+sNCumQCLXF68J43Fe9UZvL6/4nrJnsN6oY7k0hWSevHuybD4mn87gfGK7ANrUwylZNe1VOullt+3oet4A3UGskcWFSnzKy2bQgDVw9Y6T1NHHuhXZA8s7AeLOIqii451P9j2iFMQR+lXZO+bz/AlHxxtVVUGYuRC2ldf9Cuy921Xma8lfNX94G7qr20eE/vOZI/NRISxpkD0cSwUJmJp2wpyP0j2R+xVUe4v1VwNLYHMP2MeJHto3u3zJuFYtfV2UKJppfYFuB8k+4gN8wwo81cYnzvIDZsASwf9LO9rL3oTAIDcrrpesmewNlos6Ev2EwBQoDRugD4DowK6z5L6m79L9m2zQVYH6lxfTXetPxilCLBuJ/vArL6qe7/vjs0AQJhsKO/oV2TvWzkPkfcdnaqt105h0EUngPNXZB+wo67APCQ7NViOny61bg9C/Ivo1L9ISZVXXS/ZM9gapdpoe+3jqMcrO0efW5Y06fSK6yV7DlvzYM1veedrU+nZxAMV5bQO/YrsfWujxWFEpoqjxZFUtc1f1dmZK66X7DlsbTS/OiEYxo29hZjhvWiAdTvZY6tdmagulDPztTXoMcxTZWJ9RfbYWskeM2LGbq4vR52rzs5ccb1kz2HbLR713o8yhGV5sJTx7dY15kGyP2Jej2s8PAEgTDFENT47R78ie2R+mLmW51pbzmZJ2yO7z+hXZA/YcqlHdCQ/7FWbz668+2cb7/0ge2yv7kOO4w19FBtCWpzA/SDZY+tswgrYOrs5bXzuVrU/66zVfHuvmG2gLylK+Lrkesmew/pFH30VG9o8A4BQtzdJlOedyf4U6zc92s1pn3K5T0Zui7QpBsucIsO/8W8m+0+y+yuOk8r43K2CXoF5gGAeMgCkVWax6WMI0EHnj5dcL9lz2N19yEG6+qblHI+kgudxyD6wsB+Mdz7uNVDPiFE/pV+RvW/C/8+L7F9gvwIjLZ6Asv6P4AAAAABJRU5ErkJggg==" alt="QR код"></div>
+      <p class="qrcap">QR код уншуулж холбогдоно уу</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<nav class="nav">
+  <div class="counter"><b id="cur">01</b> / <span id="tot">13</span></div>
+  <div class="dots" id="dots"></div>
+  <div class="btns">
+    <button class="btn" id="prev" aria-label="Өмнөх"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <button class="btn" id="next" aria-label="Дараах"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+    <button class="btn" id="fs" aria-label="Бүтэн дэлгэц"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+  </div>
+</nav>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const slides = [...document.querySelectorAll('.slide')];
+  const dots = document.getElementById('dots');
+  const N = slides.length;
+  let idx = 0, timers = [];
+  document.getElementById('tot').textContent = String(N).padStart(2,'0');
+
+  slides.forEach((s,i) => {
+    const b = document.createElement('button');
+    b.title = s.dataset.title; b.setAttribute('aria-label', s.dataset.title);
+    b.onclick = () => go(i);
+    dots.appendChild(b);
+  });
+
+  const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+  const every = (fn, ms) => timers.push(setInterval(fn, ms));
+  function clearTimers(){ timers.forEach(t => {clearTimeout(t); clearInterval(t);}); timers = []; }
+
+  function go(i){
+    if (i < 0 || i >= N) return;
+    clearTimers();
+    slides.forEach((s,k) => { s.classList.toggle('active', k === i); s.classList.toggle('prev', k < i); });
+    [...dots.children].forEach((d,k) => d.classList.toggle('on', k === i));
+    document.getElementById('cur').textContent = String(i+1).padStart(2,'0');
+    document.getElementById('progress').style.width = ((i+1)/N*100) + '%';
+    idx = i;
+    slides[i].scrollTop = 0;
+    try { history.replaceState(null, '', '#' + (i+1)); } catch(e) {}
+    onEnter(slides[i]);
+  }
+
+  /* count-up numbers */
+  function countUp(root){
+    root.querySelectorAll('[data-count]').forEach(el => {
+      const target = parseFloat(el.dataset.count), dec = +(el.dataset.dec||0);
+      const pre = el.dataset.prefix||'', suf = el.dataset.suffix||'', sep = el.dataset.sep;
+      const fmt = v => { let s = v.toFixed(dec); if (sep) s = Math.round(v).toLocaleString('en-US'); return pre + s + suf; };
+      if (reduce){ el.textContent = fmt(target); return; }
+      const dur = 1800, t0 = performance.now() + 450;
+      el.textContent = fmt(0);
+      const step = now => {
+        const p = Math.min(1, Math.max(0, (now - t0)/dur)), e = 1 - Math.pow(1-p, 4);
+        el.textContent = fmt(target*e);
+        if (p < 1 && slides[idx].contains(el)) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+  }
+
+  /* slide 1: typewriter */
+  const title = 'ДИЖИТАЛ БИЗНЕСИЙН ШИНЭ ЭРСДЭЛЭЭС ХАМГААЛАХ';
+  function typeTitle(){
+    const el = document.getElementById('typed');
+    if (reduce){ el.textContent = title; return; }
+    el.textContent = ''; let n = 0;
+    later(function tick(){ el.textContent = title.slice(0, ++n); if (n < title.length) later(tick, 34); }, 500);
+  }
+
+  /* slide 3: orbit of services */
+  const svcs = [['i-globe','Веб сайт'],['i-phone','Мобайл апп'],['i-card','Онлайн төлбөр'],['i-cart','E-commerce'],['i-api','API'],['i-cloud','Cloud'],['i-mail','И-мэйл'],['i-server','ERP']];
+  const track = document.querySelector('#orbit .track');
+  svcs.forEach(([ic,name],k) => {
+    const a = k/svcs.length*Math.PI*2 - Math.PI/2, R = 41;
+    const d = document.createElement('div'); d.className = 'svc';
+    d.style.left = (50 + R*Math.cos(a)) + '%'; d.style.top = (50 + R*Math.sin(a)) + '%';
+    d.innerHTML = `<div class="b"><svg><use href="#${ic}"/></svg></div><span>${name}</span>`;
+    track.appendChild(d);
+  });
+  function hackOrbit(){
+    const items = [...track.children];
+    items.forEach(x => x.classList.remove('hacked'));
+    items.forEach((x,k) => later(() => x.classList.add('hacked'), 700 + k*170));
+  }
+
+  /* slide 5: 22s timer */
+  function runTimer(){
+    const fg = document.querySelector('#timer .fg'), t = document.getElementById('tsec'), C = 565.5;
+    if (reduce){ t.textContent = '22'; fg.style.strokeDashoffset = C*(1-22/60); return; }
+    let s = 0; t.textContent = '0'; fg.style.transition = 'none'; fg.style.strokeDashoffset = C;
+    later(() => {
+      every(() => {
+        if (s >= 22) return;
+        s++; t.textContent = s;
+        fg.style.transition = 'stroke-dashoffset .12s linear';
+        fg.style.strokeDashoffset = C*(1 - s/60*1);
+        if (s === 22){ t.style.color = 'var(--red2)'; t.style.textShadow = 'var(--glow-red)'; }
+      }, 120);
+    }, 600);
+    t.style.color = ''; t.style.textShadow = '';
+  }
+
+  /* slide 7: auto-cycling tabs */
+  const tabs = [...document.querySelectorAll('#svcTabs .tab')], panes = [...document.querySelectorAll('#svcTabs .pane')];
+  let tabI = 0, tabTimer;
+  function showTab(i, auto){
+    tabI = i;
+    tabs.forEach((t,k) => { t.classList.toggle('on', k === i); const bar = t.querySelector('.t'); bar.style.animation = 'none'; bar.offsetWidth; bar.style.animation = ''; });
+    panes.forEach((p,k) => {
+      p.classList.toggle('on', k === i);
+      if (k === i) p.querySelectorAll('li').forEach((li,j) => { li.style.animation = 'none'; li.offsetWidth; li.style.animation = ''; li.style.animationDelay = (j*110+100)+'ms'; });
+    });
+    clearInterval(tabTimer);
+    if (auto !== false && slides[idx].contains(tabs[0])) tabTimer = setInterval(() => showTab((tabI+1)%tabs.length), 6000);
+  }
+  tabs.forEach((t,i) => t.onclick = () => showTab(i));
+
+  /* slide 8: OWASP */
+  const OW = {
+    m: {desc:'OWASP Mobile Top 10 стандартын дагуу iOS/Android апп-ын эмзэг байдал, дата хадгалалт, API холболтыг шалгана.', items:[
+      ['M1','Нууц үг, API key, token буруу ашигласнаар систем алдагдах эрсдэлтэй.'],
+      ['M2','Гуравдагч талын SDK, library, dependency-ээс халдлага үүсэх эрсдэл.'],
+      ['M3','Нэвтрэлт болон эрхийн хяналт сул байснаар зөвшөөрөлгүй хандалт үүснэ.'],
+      ['M4','Оролт, гаралтын өгөгдөл шалгахгүй бол injection төрлийн халдлагад өртөнө.'],
+      ['M5','Өгөгдөл дамжуулах хамгаалалт сул бол мэдээлэл замаасаа алдагдана.'],
+      ['M6','Хувийн мэдээллийн хамгаалалт хангалтгүйгээс privacy зөрчил гарна.'],
+      ['M7','Reverse engineering болон tampering-с хамгаалалтгүй бинар файл.'],
+      ['M8','Буруу тохиргоо нь халдагчдад шууд боломж олгодог.'],
+      ['M9','Төхөөрөмж дээрх мэдээллийг хамгаалахгүй хадгалсан.'],
+      ['M10','Криптографийн буруу хэрэгжилт нь өгөгдөл задрах эрсдэлтэй.']]},
+    w: {desc:'Байгууллагын веб системийн хамгийн өндөр эрсдэлтэй кибер аюулуудыг тодорхойлдог олон улсын шалгуураар (OWASP Top 10) шалгана.', items:[
+      ['A01','Хэрэглэгч өөрийн эрхгүй мэдээлэлд хандах боломж үүснэ.'],
+      ['A02','Мэдээлэл хамгаалах криптографийн хэрэгжилт сул.'],
+      ['A03','SQL Injection, XSS зэрэг халдлагаар системийг удирдах эрсдэлтэй.'],
+      ['A04','Архитектурын түвшний аюулгүй байдлын алдаа.'],
+      ['A05','Буруу тохиргоо нь халдагчдад боломж олгоно.'],
+      ['A06','Хуучин framework, library ашигласнаар эрсдэл нэмэгдэнэ.'],
+      ['A07','Нэвтрэлт болон session хамгаалалт хангалтгүй.'],
+      ['A08','Software update, CI/CD, dependency-ийн бүрэн бүтэн байдал алдагдах.'],
+      ['A09','Халдлагыг илрүүлэх, мөрдөн шалгах боломж хязгаарлагдана.'],
+      ['A10','Серверээр дамжуулан дотоод систем рүү халдлага хийх боломж.']]}
+  };
+  const owSeg = document.getElementById('owSeg');
+  let owKey = 'm', owTimer;
+  function showOW(k){
+    owKey = k;
+    owSeg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.k === k));
+    document.getElementById('owDesc').textContent = OW[k].desc;
+    document.getElementById('owList').innerHTML = OW[k].items.map(([c,t],j) => `<div class="owi" style="animation-delay:${j*60+100}ms"><b>${c}</b><span>${t}</span></div>`).join('');
+  }
+  owSeg.querySelectorAll('button').forEach(b => b.onclick = () => { clearInterval(owTimer); showOW(b.dataset.k); });
+  showOW('m');
+
+  /* slide 9: wheel */
+  const wheel = document.getElementById('wheel'), stepEls = [...document.querySelectorAll('#steps .step')];
+  const wIcons = ['i-search','i-sort','i-report','i-bulb','i-shield'];
+  const nodes = wIcons.map((ic,k) => {
+    const a = k/5*Math.PI*2 - Math.PI/2, R = 40;
+    const n = document.createElement('div'); n.className = 'node';
+    n.style.left = (50 + R*Math.cos(a)) + '%'; n.style.top = (50 + R*Math.sin(a)) + '%';
+    n.innerHTML = `<svg><use href="#${ic}"/></svg><i>${k+1}</i>`;
+    n.onclick = () => setStep(k, true);
+    wheel.appendChild(n); return n;
+  });
+  let stepI = 0, stepTimer;
+  function setStep(k, manual){
+    stepI = k;
+    nodes.forEach((n,j) => n.classList.toggle('on', j === k));
+    stepEls.forEach((s,j) => s.classList.toggle('on', j === k));
+    if (manual){ clearInterval(stepTimer); stepTimer = setInterval(() => setStep((stepI+1)%5), 3200); }
+  }
+  stepEls.forEach((s,k) => s.onclick = () => setStep(k, true));
+
+  /* slide 10: monthly / yearly */
+  const sw = document.getElementById('sw');
+  function setYear(on){
+    sw.classList.toggle('on', on); sw.setAttribute('aria-checked', on);
+    document.getElementById('lblM').classList.toggle('on-l', !on);
+    document.getElementById('lblY').classList.toggle('on-l', on);
+    document.querySelectorAll('.price .amt').forEach(a => {
+      const b = a.querySelector('b'); b.style.opacity = 0;
+      setTimeout(() => { b.textContent = on ? b.dataset.y : b.dataset.m; a.querySelector('.per').textContent = on ? 'сая ₮ / жил' : 'сая ₮ / сар'; b.style.opacity = 1; }, 220);
+    });
+  }
+  sw.onclick = () => setYear(!sw.classList.contains('on'));
+  sw.onkeydown = e => { if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); e.stopPropagation(); sw.click(); } };
+
+  function onEnter(s){
+    clearInterval(tabTimer); clearInterval(stepTimer); clearInterval(owTimer);
+    countUp(s);
+    const i = slides.indexOf(s);
+    if (i === 0) typeTitle();
+    if (s.contains(track)) hackOrbit();
+    if (s.querySelector('#timer')) runTimer();
+    if (s.contains(tabs[0])) showTab(0);
+    if (s.contains(owSeg)){ showOW('m'); if (!reduce) owTimer = setInterval(() => showOW(owKey === 'm' ? 'w' : 'm'), 9000); }
+    if (s.contains(wheel)){ setStep(0); if (!reduce) stepTimer = setInterval(() => setStep((stepI+1)%5), 3200); }
+  }
+
+  /* navigation */
+  const next = () => go(Math.min(N-1, idx+1)), prev = () => go(Math.max(0, idx-1));
+  document.getElementById('next').onclick = next;
+  document.getElementById('prev').onclick = prev;
+  document.getElementById('fs').onclick = () => {
+    const d = document.documentElement;
+    if (!document.fullscreenElement) (d.requestFullscreen||d.webkitRequestFullscreen||(()=>{})).call(d);
+    else document.exitFullscreen && document.exitFullscreen();
+  };
+  addEventListener('keydown', e => {
+    if (['ArrowRight','PageDown',' ','Enter'].includes(e.key) && e.target.tagName !== 'BUTTON'){ e.preventDefault(); next(); }
+    else if (['ArrowRight','PageDown'].includes(e.key)){ e.preventDefault(); next(); }
+    else if (['ArrowLeft','PageUp','Backspace'].includes(e.key)){ e.preventDefault(); prev(); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(N-1);
+    else if (e.key === 'f' || e.key === 'F') document.getElementById('fs').click();
+  });
+  let tx = null, ty = null;
+  addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, {passive:true});
+  addEventListener('touchend', e => {
+    if (tx === null) return;
+    const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)*1.4) (dx < 0 ? next : prev)();
+    tx = null;
+  }, {passive:true});
+  let wheelLock = 0;
+  addEventListener('wheel', e => {
+    const s = slides[idx], atBottom = s.scrollTop + s.clientHeight >= s.scrollHeight - 2, atTop = s.scrollTop <= 0;
+    if (Date.now() < wheelLock || Math.abs(e.deltaY) < 30) return;
+    if (e.deltaY > 0 && atBottom){ wheelLock = Date.now() + 900; next(); }
+    else if (e.deltaY < 0 && atTop){ wheelLock = Date.now() + 900; prev(); }
+  }, {passive:true});
+
+  /* background: network of nodes */
+  const cv = document.getElementById('net'), ctx = cv.getContext('2d');
+  let W, H, pts = [], dpr = Math.min(2, devicePixelRatio||1);
+  function resize(){
+    W = cv.width = innerWidth*dpr; H = cv.height = innerHeight*dpr;
+    cv.style.width = innerWidth+'px'; cv.style.height = innerHeight+'px';
+    const n = Math.round(Math.min(90, innerWidth*innerHeight/16000));
+    pts = Array.from({length:n}, () => ({x:Math.random()*W, y:Math.random()*H, vx:(Math.random()-.5)*.35*dpr, vy:(Math.random()-.5)*.35*dpr, r:(Math.random()*1.6+.6)*dpr, red:Math.random()<.18}));
+  }
+  resize(); addEventListener('resize', resize);
+  const packets = [];
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    const L = 150*dpr;
+    for (let i=0;i<pts.length;i++){
+      const a = pts[i];
+      if (!reduce){ a.x += a.vx; a.y += a.vy; if (a.x<0||a.x>W) a.vx*=-1; if (a.y<0||a.y>H) a.vy*=-1; }
+      for (let j=i+1;j<pts.length;j++){
+        const b = pts[j], dx=a.x-b.x, dy=a.y-b.y, d=Math.hypot(dx,dy);
+        if (d < L){
+          ctx.strokeStyle = `rgba(90,140,200,${(1-d/L)*.22})`; ctx.lineWidth = dpr*.7;
+          ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+          if (!reduce && Math.random() < .0009 && packets.length < 14) packets.push({a,b,t:0,red:Math.random()<.4});
+        }
+      }
+      ctx.fillStyle = a.red ? 'rgba(255,59,82,.85)' : 'rgba(34,211,238,.55)';
+      ctx.beginPath(); ctx.arc(a.x,a.y,a.r,0,7); ctx.fill();
+    }
+    for (let k=packets.length-1;k>=0;k--){
+      const p = packets[k]; p.t += .012;
+      if (p.t >= 1){ packets.splice(k,1); continue; }
+      const x = p.a.x+(p.b.x-p.a.x)*p.t, y = p.a.y+(p.b.y-p.a.y)*p.t;
+      ctx.fillStyle = p.red ? '#ff3b52' : '#22d3ee';
+      ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10*dpr;
+      ctx.beginPath(); ctx.arc(x,y,2.2*dpr,0,7); ctx.fill(); ctx.shadowBlur = 0;
+    }
+    if (!reduce) requestAnimationFrame(frame);
+  }
+  frame();
+
+  const start = parseInt(location.hash.slice(1),10);
+  go(start >= 1 && start <= N ? start-1 : 0);
+})();
+</script>
+</body>
+</html>
