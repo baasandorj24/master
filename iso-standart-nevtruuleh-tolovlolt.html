@@ -587,6 +587,23 @@ svg [data-a],svg [data-step]{transform-box:fill-box;transform-origin:center}
 .gd-row .chip{justify-self:start;color:var(--sky);border-color:var(--sky)}
 .gd-row .chip.trust{color:var(--gold);border-color:var(--gold);background:var(--gold-soft)}
 .orow.ohead>span:nth-child(3){padding-left:24px}
+
+/* ---------- why each standard ---------- */
+.wy-l{position:absolute;left:120px;top:96px;width:620px;display:grid;gap:24px;align-content:start}
+.wy-code{font:500 26px/1 var(--font-mono);color:var(--sky)}
+.why.c3 .wy-code{color:var(--gold)}
+.wy-q{font:italic 400 40px/1.3 var(--font-serif);text-wrap:balance}
+.why.c3 .wy-q{color:var(--gold)}
+.wy-ico{width:220px;height:220px;margin-top:30px;overflow:visible}
+.wy-ico .ln{fill:none;stroke:var(--sky);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.why.c3 .wy-ico .ln{stroke:var(--gold)}
+.wy-list{position:absolute;left:820px;right:120px;top:120px;display:grid;counter-reset:wy}
+.wy-list li{position:relative;display:grid;gap:8px;padding:22px 0 22px 64px;border-top:1px solid var(--line);counter-increment:wy}
+.wy-list li:last-child{border-bottom:1px solid var(--line)}
+.wy-list li::before{content:"";position:absolute;left:4px;top:32px;width:16px;height:16px;border-radius:50%;background:var(--sky);box-shadow:0 0 0 7px var(--sky-soft)}
+.why.c3 .wy-list li::before{background:var(--gold);box-shadow:0 0 0 7px var(--gold-soft)}
+.wy-list b{font:700 34px/1.2 var(--font-sans)}
+.wy-list p{font:400 25px/1.4 var(--font-sans);color:var(--muted);text-wrap:pretty}
 </style>
 <script>document.documentElement.classList.add('js')</script>
 
@@ -641,7 +658,41 @@ svg [data-a],svg [data-step]{transform-box:fill-box;transform-origin:center}
       <p class="st-q">Мэдээллээ хамгаалж чадах уу?</p>
     </article>
   </div>
-  <aside class="note"><p>Стандарт бүр өөр асуултад хариулна. 9001: чанар ба хэрэглэгч. 20000-1: IT үйлчилгээг SLA-ийн дагуу найдвартай хүргэх. 27001: мэдээллийн нууцлал, бүрэн бүтэн байдал, хүртээмж.</p><p>Товшилт бүр нэг стандарт нэмнэ.</p></aside>
+  <aside class="note"><p>Стандарт бүр өөр асуултад хариулна. 9001: чанар ба хэрэглэгч. 20000-1: IT үйлчилгээг SLA-ийн дагуу найдвартай хүргэх. 27001: мэдээллийн нууцлал, бүрэн бүтэн байдал, хүртээмж.</p><p>Товшилт бүр нэг стандарт нэмнэ. Дараагийн гурван слайдад стандарт тус бүрийг яагаад хэрэгжүүлэх ёстойг тайлбарлана.</p></aside>
+</section>
+
+<!-- why 1 -->
+<section class="slide why c1" id="w1" data-section="1" data-mood=".35" aria-roledescription="slide" aria-label="Яагаад ISO 9001?">
+  <div class="wy-l">
+    <p class="wy-code" data-a="rise" style="--d:.05s">ISO 9001:2015</p>
+    <h2 class="h2" data-a="rise" style="--d:.15s">Яагаад ISO 9001?</h2>
+    <p class="wy-q" data-a="rise" style="--d:.35s">Хэрэглэгч бүрт ижил чанарыг хүргэхийн тулд.</p>
+    <svg class="wy-ico" viewBox="0 0 120 120" aria-hidden="true"><path class="draw on-enter ln" pathLength="1" style="--d:.5s" d="M98 50A38 38 0 1 1 22 50A38 38 0 1 1 98 50"/><path class="draw on-enter ln" pathLength="1" style="--d:1.1s;--dur:.6s" d="M42 50L55 63L79 39"/><path class="draw on-enter ln" pathLength="1" style="--d:1.3s;--dur:.6s" d="M42 84L34 112L48 104L56 116L60 90M78 84L86 112L72 104L64 116L60 90"/></svg>
+  </div>
+  <ol class="wy-list" data-stagger=".5" data-inc=".14"><li data-a="rise"><b>Хэрэглэгчийн сэтгэл ханамж</b><p>Хэрэглэгчийн шаардлагыг тодорхойлж, санал гомдлыг системтэй шийдэж, сэтгэл ханамжийг хэмжинэ.</p></li><li data-a="rise"><b>Тогтвортой, давтагдах чанар</b><p>Процесс тодорхой болж, үр дүн хувь хүнээс биш тогтолцооноос хамаардаг болно.</p></li><li data-a="rise"><b>Тендер, гэрээнд давуу тал</b><p>Төрийн болон олон улсын худалдан авалт, томоохон түншүүд ISO 9001 гэрчилгээг шаардах нь түгээмэл.</p></li><li data-a="rise"><b>Алдаа, зардал буурна</b><p>Дахин хийх ажил, гологдол, илүүдэл алхмыг тодорхойлж бууруулна.</p></li><li data-a="rise"><b>Баримтад суурилсан удирдлага</b><p>KPI, дотоод аудит, удирдлагын дүн шинжилгээгээр шийдвэр гаргаж, PDCA-аар тасралтгүй сайжруулна.</p></li></ol>
+  <aside class="note"><p>ISO 9001-ийн үнэ цэнийг хэрэглэгч, процесс, зах зээл гэсэн гурван талаас тайлбарлана. Тендерт оролцдог байгууллагад 3-р мөрийг онцолно.</p></aside>
+</section>
+<!-- why 2 -->
+<section class="slide why c2" id="w2" data-section="1" data-mood=".55" aria-roledescription="slide" aria-label="Яагаад ISO/IEC 20000-1?">
+  <div class="wy-l">
+    <p class="wy-code" data-a="rise" style="--d:.05s">ISO/IEC 20000-1:2018</p>
+    <h2 class="h2" data-a="rise" style="--d:.15s">Яагаад ISO/IEC 20000-1?</h2>
+    <p class="wy-q" data-a="rise" style="--d:.35s">IT үйлчилгээгээ амласан түвшинд нь хүргэхийн тулд.</p>
+    <svg class="wy-ico" viewBox="0 0 120 120" aria-hidden="true"><path class="draw on-enter ln" pathLength="1" style="--d:.3s" d="M18 16H102V46H18Z"/><path class="draw on-enter ln" pathLength="1" style="--d:.5s" d="M18 56H102V86H18Z"/><path class="draw on-enter ln" pathLength="1" style="--d:.9s;--dur:.5s" d="M30 31H48M30 71H48M84 31H88M84 71H88"/><path class="draw on-enter ln" pathLength="1" style="--d:1.1s;--dur:.6s" d="M60 86V106M32 106H88"/></svg>
+  </div>
+  <ol class="wy-list" data-stagger=".5" data-inc=".14"><li data-a="rise"><b>SLA-гаа биелүүлнэ</b><p>Үйлчилгээний түвшнийг тохиролцож, хэмжиж, тогтмол тайлагнана.</p></li><li data-a="rise"><b>Тасалдал хурдан шийдэгдэнэ</b><p>Incident, problem менежментээр давтагддаг доголдлын үндсэн шалтгааныг арилгана.</p></li><li data-a="rise"><b>Өөрчлөлтийн эрсдэл буурна</b><p>Change, release-ийг хянаж, шинэчлэлтээс үүдэх зогсолтыг багасгана.</p></li><li data-a="rise"><b>IT бизнестэйгээ уялдана</b><p>Үйлчилгээний каталог, хүчин чадал, төсөв, нийлүүлэгчийг нэг тогтолцоонд удирдана.</p></li><li data-a="rise"><b>Харилцагчийн итгэлийг нотолно</b><p>IT үйлчилгээ үзүүлэгч, дата төв, cloud-ийн хувьд олон улсад хүлээн зөвшөөрөгдсөн баталгаа.</p></li></ol>
+  <aside class="note"><p>IT үйлчилгээ үзүүлэгч болон дотоод IT алба аль алинд хамаатай. SLA-тай гэрээ байгуулдаг бол 1, 5-р мөрийг онцолно.</p></aside>
+</section>
+<!-- why 3 -->
+<section class="slide why c3" id="w3" data-section="1" data-mood=".85" aria-roledescription="slide" aria-label="Яагаад ISO/IEC 27001?">
+  <div class="wy-l">
+    <p class="wy-code" data-a="rise" style="--d:.05s">ISO/IEC 27001:2022</p>
+    <h2 class="h2" data-a="rise" style="--d:.15s">Яагаад ISO/IEC 27001?</h2>
+    <p class="wy-q" data-a="rise" style="--d:.35s">Мэдээллээ хамгаалж, итгэлийг нотлохын тулд.</p>
+    <svg class="wy-ico" viewBox="0 0 120 120" aria-hidden="true"><path class="draw on-enter ln" pathLength="1" style="--d:.3s" d="M38 54V40A22 22 0 0 1 82 40V54"/><path class="draw on-enter ln" pathLength="1" style="--d:.55s" d="M24 54H96V110H24Z"/><path class="draw on-enter ln" pathLength="1" style="--d:1.1s;--dur:.6s" d="M67 76A7 7 0 1 1 53 76A7 7 0 1 1 67 76M60 83V96"/></svg>
+  </div>
+  <ol class="wy-list" data-stagger=".5" data-inc=".14"><li data-a="rise"><b>Эрсдэлд суурилсан хамгаалалт</b><p>Эрсдэлийн үнэлгээгээр Annex A-ийн 93 хяналтаас хэрэгтэйг нь сонгож, зардлаа зөв хуваарилна.</p></li><li data-a="rise"><b>Хууль, зохицуулалтад нийцэл</b><p>Кибер аюулгүй байдлын тухай болон Хүний хувийн мэдээлэл хамгаалах тухай хуулийг хэрэгжүүлэх тулгуур болно.</p></li><li data-a="rise"><b>Харилцагч, түншийн итгэл</b><p>Банк, санхүү, олон улсын түншүүд нийлүүлэгчээсээ 27001 гэрчилгээ шаардах нь нэмэгдэж байна.</p></li><li data-a="rise"><b>Зөрчлийн хохирол буурна</b><p>Зөрчлийн хариу арга хэмжээ, нөөцлөлт, тасралтгүй ажиллагаагаар хурдан сэргэнэ.</p></li><li data-a="rise"><b>Ажилтны ухамсар</b><p>Сургалт, журмаар хүний хүчин зүйлээс үүдэх эрсдэлийг бууруулна.</p></li></ol>
+  <aside class="note"><p>Кибер халдлагын эрсдэл бүх салбарт өсч байна. Хуулийн шаардлага, харилцагчийн итгэл, хохирлоос сэргийлэх гэсэн гурван үндсэн шалтгааныг онцолно.</p></aside>
 </section>
 
 <!-- 3 -->
